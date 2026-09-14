@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { logoutAction } from "@/app/admin/actions";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "대시보드", icon: "🏠", exact: true },
@@ -55,13 +56,18 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      <div className="border-t border-slate-800 px-4 py-4">
-        <div className="rounded-lg bg-slate-900 px-3 py-3">
-          <p className="text-xs font-medium text-slate-300">Stage 1 · UI Preview</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
-            DB · 로그인 연결 전 단계입니다. 모든 데이터는 mock입니다.
-          </p>
-        </div>
+      <div className="border-t border-slate-800 px-3 py-4">
+        <form action={logoutAction}>
+          <button
+            type="submit"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-900 hover:text-slate-100"
+          >
+            <span className="text-base leading-none" aria-hidden>
+              🚪
+            </span>
+            로그아웃
+          </button>
+        </form>
       </div>
     </aside>
   );
