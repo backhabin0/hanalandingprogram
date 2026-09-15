@@ -6,17 +6,10 @@ import { ProductSection } from "../ProductSection";
 import { FeatureGrid } from "../FeatureGrid";
 import { ProcessSteps } from "../ProcessSteps";
 import { PricingSection } from "../PricingSection";
+import { SpecificationTable } from "../SpecificationTable";
 import { FAQSection } from "../FAQSection";
 import { LeadSection } from "../LeadSection";
 import { SiteFooter } from "../SiteFooter";
-
-const NAV_ITEMS = [
-  { label: "서비스", href: "#products" },
-  { label: "특징", href: "#features" },
-  { label: "프로세스", href: "#process" },
-  { label: "가격", href: "#pricing" },
-  { label: "FAQ", href: "#faq" },
-];
 
 /**
  * Template A — "기업 서비스형" (Corporate Service).
@@ -24,11 +17,19 @@ const NAV_ITEMS = [
  * metrics and a clear adoption process ahead of the pricing/estimate ask.
  */
 export function TemplateA({ page }: { page: LandingPage }) {
+  const navItems = [
+    page.products.length > 0 && { label: "서비스", href: "#services" },
+    page.features.length > 0 && { label: "특징", href: "#features" },
+    (page.representativePrice || page.specifications.length > 0) && { label: "가격", href: "#pricing" },
+    page.faqs.length > 0 && { label: "FAQ", href: "#faq" },
+    { label: "문의", href: "#lead" },
+  ].filter((item): item is { label: string; href: string } => Boolean(item));
+
   return (
     <div className="bg-white">
       <SiteHeader
         businessName={page.businessName}
-        navItems={NAV_ITEMS}
+        navItems={navItems}
         phone={page.phone}
         ctaLabel="무료 견적 받기"
         variant="a"
@@ -40,15 +41,16 @@ export function TemplateA({ page }: { page: LandingPage }) {
           title={page.heroTitle}
           description={page.heroDescription}
           primaryCta={{ label: "무료 견적 받기", href: "#lead" }}
-          secondaryCta={{ label: "서비스 살펴보기", href: "#products" }}
+          secondaryCta={{ label: "서비스 살펴보기", href: "#services" }}
           imageLabel={`${page.businessName} 현장 이미지`}
+          imageUrl={page.mainImageUrl}
           variant="a"
         />
 
         <TrustMetrics metrics={page.metrics} badges={page.trustBadges} variant="a" />
 
         <ProductSection
-          id="products"
+          id="services"
           eyebrow="서비스 안내"
           title={`${page.businessName}가 제공하는 서비스`}
           description={page.description}
@@ -68,7 +70,7 @@ export function TemplateA({ page }: { page: LandingPage }) {
         <ProcessSteps
           id="process"
           eyebrow="도입 프로세스"
-          title="상담부터 사후관리까지, 4단계로 진행됩니다"
+          title="상담부터 사후관리까지, 체계적으로 진행됩니다"
           steps={page.processSteps}
           variant="a"
         />
@@ -83,7 +85,17 @@ export function TemplateA({ page }: { page: LandingPage }) {
           variant="a"
         />
 
+        <SpecificationTable
+          id="specifications"
+          eyebrow="기술 사양"
+          title="표준 사양 안내"
+          description="구성 요소별 기본 사양입니다. 현장 조건에 따라 별도 옵션을 제안할 수 있습니다."
+          specs={page.specifications}
+          variant="a"
+        />
+
         <FAQSection
+          id="faq"
           title="자주 묻는 질문"
           description={`${page.businessName} 도입을 고려 중이신 분들이 가장 많이 묻는 질문을 모았습니다.`}
           faqs={page.faqs}
@@ -104,6 +116,7 @@ export function TemplateA({ page }: { page: LandingPage }) {
         industry={page.industry}
         phone={page.phone}
         address={page.address}
+        navItems={navItems}
         companyInfo={page.companyInfo}
         variant="a"
       />

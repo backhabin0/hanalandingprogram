@@ -74,34 +74,35 @@ export function ProductSection({
       <div className="mx-auto max-w-[1360px] px-6 py-20 lg:px-10">
         <SectionHeading eyebrow={eyebrow} title={title} description={description} variant={variant} />
 
-        <div className="mt-14 space-y-16">
+        <div className="mt-14 space-y-20">
           {products.map((product, index) => {
             const reversed = index % 2 === 1;
             return (
               <article
                 key={product.id}
                 className={cn(
-                  "grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16",
-                  index > 0 && "border-t pt-16",
+                  "grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-20",
+                  index > 0 && "border-t pt-20",
                   VARIANT_DIVIDER[variant]
                 )}
               >
                 <div className={reversed ? "lg:order-2" : undefined}>
                   <ImagePlaceholder
                     label={`${product.name} 이미지`}
+                    src={product.image}
                     ratio="aspect-[4/3]"
                     tone={VARIANT_IMAGE_TONE[variant]}
                   />
                 </div>
 
                 <div className={reversed ? "lg:order-1" : undefined}>
-                  <h3 className={cn("text-2xl font-bold tracking-tight", VARIANT_TITLE[variant])}>
+                  <h3 className={cn("text-2xl font-bold tracking-tight sm:text-3xl", VARIANT_TITLE[variant])}>
                     {product.name}
                   </h3>
                   <p className={cn("mt-3 text-lg font-medium", VARIANT_LEAD[variant])}>
                     {product.shortDescription}
                   </p>
-                  <p className={cn("mt-4 text-base leading-relaxed", VARIANT_BODY[variant])}>
+                  <p className={cn("mt-4 max-w-2xl whitespace-pre-line text-base leading-relaxed", VARIANT_BODY[variant])}>
                     {product.description}
                   </p>
 
@@ -112,8 +113,13 @@ export function ProductSection({
                         VARIANT_PRICE_BOX[variant]
                       )}
                     >
+                      {product.priceLabel && (
+                        <span className="w-full text-xs font-semibold uppercase tracking-wide opacity-70">
+                          {product.priceLabel}
+                        </span>
+                      )}
                       {product.price && (
-                        <span className="text-lg font-bold">{product.price}</span>
+                        <span className="text-xl font-bold">{product.price}</span>
                       )}
                       {product.priceUnit && (
                         <span className="text-sm font-medium opacity-80">{product.priceUnit}</span>

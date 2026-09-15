@@ -35,6 +35,7 @@ export function LocationSection({
   region,
   phone,
   kakaoUrl,
+  businessHours,
   variant,
 }: {
   id?: string;
@@ -44,21 +45,24 @@ export function LocationSection({
   region?: string;
   phone?: string;
   kakaoUrl?: string;
+  businessHours?: string;
   variant: LandingVariant;
 }) {
+  if (!address && !region && !phone && !kakaoUrl && !businessHours) return null;
+
   return (
     <section id={id} className={cn("border-b", VARIANT_SECTION[variant])}>
       <div className="mx-auto grid max-w-[1360px] items-center gap-14 px-6 py-20 lg:grid-cols-2 lg:px-10">
         <div>
           <SectionHeading title={title} description={description} variant={variant} />
 
-          <dl className="mt-8 space-y-5">
+          <dl className="mt-8 grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
             {address && (
-              <div>
+              <div className="sm:col-span-2">
                 <dt className={cn("text-xs font-semibold uppercase tracking-wide", VARIANT_LABEL[variant])}>
                   주소
                 </dt>
-                <dd className={cn("mt-1 text-base font-medium", VARIANT_VALUE[variant])}>{address}</dd>
+                <dd className={cn("mt-1 text-lg font-semibold", VARIANT_VALUE[variant])}>{address}</dd>
               </div>
             )}
             {region && (
@@ -67,6 +71,14 @@ export function LocationSection({
                   서비스 지역
                 </dt>
                 <dd className={cn("mt-1 text-base font-medium", VARIANT_VALUE[variant])}>{region}</dd>
+              </div>
+            )}
+            {businessHours && (
+              <div>
+                <dt className={cn("text-xs font-semibold uppercase tracking-wide", VARIANT_LABEL[variant])}>
+                  영업시간
+                </dt>
+                <dd className={cn("mt-1 text-base font-medium", VARIANT_VALUE[variant])}>{businessHours}</dd>
               </div>
             )}
             {phone && (

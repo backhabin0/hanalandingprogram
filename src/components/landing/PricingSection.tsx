@@ -81,7 +81,7 @@ export function PricingSection({
         {mode === "summary" && summary && (
           <div
             className={cn(
-              "mx-auto mt-12 max-w-xl rounded-2xl border p-10 text-center shadow-sm",
+              "mx-auto mt-12 max-w-xl rounded-xl border p-10 text-center shadow-sm",
               VARIANT_SUMMARY_CARD[variant]
             )}
           >
@@ -120,13 +120,13 @@ export function PricingSection({
             {products.map((product) => (
               <div
                 key={product.id}
-                className={cn("flex flex-col rounded-2xl border p-6", VARIANT_TIER_CARD[variant])}
+                className={cn("flex flex-col rounded-xl border p-6", VARIANT_TIER_CARD[variant])}
               >
                 <h3 className={cn("text-base font-semibold", VARIANT_TITLE[variant])}>{product.name}</h3>
                 <p className={cn("mt-1.5 text-sm leading-relaxed", VARIANT_BODY[variant])}>
                   {product.shortDescription}
                 </p>
-                <p className={cn("mt-5 text-2xl font-bold tracking-tight", VARIANT_PRICE[variant])}>
+                <p className={cn("mt-5 text-3xl font-bold tracking-tight", VARIANT_PRICE[variant])}>
                   {product.price}
                 </p>
                 {product.priceUnit && (

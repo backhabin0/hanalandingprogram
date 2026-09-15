@@ -81,7 +81,7 @@ export function LeadSection({
           </div>
         </div>
 
-        <form className="rounded-2xl bg-white p-7 shadow-xl sm:p-8">
+        <form className="rounded-xl bg-white p-7 shadow-xl sm:p-8">
           <h3 className="text-base font-semibold text-slate-900">빠른 상담 신청</h3>
           <p className="mt-1 text-sm text-slate-500">담당자가 확인 후 순차적으로 연락드립니다.</p>
 
@@ -116,7 +116,7 @@ export function LeadSection({
               상담 신청하기
             </button>
             <p className="text-center text-xs text-slate-400">
-              ※ 미리보기 화면입니다 — 실제 접수는 2단계(DB 연동)에서 활성화됩니다.
+              ※ 상담 폼 미리보기입니다 — 실제 접수 기능은 이후 단계에서 연결됩니다.
             </p>
           </div>
         </form>

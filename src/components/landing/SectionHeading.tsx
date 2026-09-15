@@ -44,7 +44,9 @@ export function SectionHeading({
         {title}
       </h2>
       {description && (
-        <p className={cn("mt-4 text-base leading-relaxed", VARIANT_BODY[variant])}>{description}</p>
+        <p className={cn("mt-4 whitespace-pre-line text-base leading-relaxed", VARIANT_BODY[variant])}>
+          {description}
+        </p>
       )}
     </div>
   );

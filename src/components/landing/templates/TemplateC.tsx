@@ -1,21 +1,15 @@
 import type { LandingPage } from "@/types/landing";
 import { SiteHeader } from "../SiteHeader";
 import { Hero } from "../Hero";
-import { ProductSection } from "../ProductSection";
 import { FeatureGrid } from "../FeatureGrid";
+import { ProductSection } from "../ProductSection";
 import { PricingSection } from "../PricingSection";
+import { ProcessSteps } from "../ProcessSteps";
 import { LocationSection } from "../LocationSection";
+import { TrustMetrics } from "../TrustMetrics";
 import { FAQSection } from "../FAQSection";
 import { LeadSection } from "../LeadSection";
 import { SiteFooter } from "../SiteFooter";
-
-const NAV_ITEMS = [
-  { label: "서비스 소개", href: "#products" },
-  { label: "이용 혜택", href: "#features" },
-  { label: "가격 안내", href: "#pricing" },
-  { label: "오시는 길", href: "#location" },
-  { label: "FAQ", href: "#faq" },
-];
 
 /**
  * Template C — "지역 서비스 상담전환형" (Local Consultation).
@@ -23,11 +17,26 @@ const NAV_ITEMS = [
  * businesses. Warm neutral tone, people-first copy, consultation-driven CTA.
  */
 export function TemplateC({ page }: { page: LandingPage }) {
+  const navItems = [
+    page.features.length > 0 && { label: "이용 혜택", href: "#features" },
+    page.products.length > 0 && { label: "서비스 소개", href: "#services" },
+    page.representativePrice && { label: "가격 안내", href: "#pricing" },
+    (page.address || page.region) && { label: "오시는 길", href: "#location" },
+    page.faqs.length > 0 && { label: "FAQ", href: "#faq" },
+    { label: "상담", href: "#lead" },
+  ].filter((item): item is { label: string; href: string } => Boolean(item));
+
+  const facts = [
+    page.region && { label: "지역", value: page.region },
+    page.phone && { label: "전화", value: page.phone },
+    page.companyInfo?.businessHours && { label: "영업시간", value: page.companyInfo.businessHours },
+  ].filter((fact): fact is { label: string; value: string } => Boolean(fact));
+
   return (
     <div className="bg-white">
       <SiteHeader
         businessName={page.businessName}
-        navItems={NAV_ITEMS}
+        navItems={navItems}
         phone={page.phone}
         ctaLabel="상담 예약하기"
         variant="c"
@@ -39,18 +48,11 @@ export function TemplateC({ page }: { page: LandingPage }) {
           title={page.heroTitle}
           description={page.heroDescription}
           primaryCta={{ label: "상담 예약하기", href: "#lead" }}
-          secondaryCta={{ label: "서비스 둘러보기", href: "#products" }}
+          secondaryCta={{ label: "서비스 둘러보기", href: "#services" }}
           imageLabel={`${page.businessName} 대표 이미지`}
+          imageUrl={page.mainImageUrl}
           variant="c"
-        />
-
-        <ProductSection
-          id="products"
-          eyebrow="서비스 소개"
-          title={`${page.businessName}의 서비스`}
-          description={page.description}
-          products={page.products}
-          variant="c"
+          facts={facts.length > 0 ? facts : undefined}
         />
 
         <FeatureGrid
@@ -58,6 +60,15 @@ export function TemplateC({ page }: { page: LandingPage }) {
           eyebrow="이용 혜택"
           title="이용 고객이 꼽는 이유"
           features={page.features}
+          variant="c"
+        />
+
+        <ProductSection
+          id="services"
+          eyebrow="서비스 소개"
+          title={`${page.businessName}의 서비스`}
+          description={page.description}
+          products={page.products}
           variant="c"
         />
 
@@ -71,6 +82,15 @@ export function TemplateC({ page }: { page: LandingPage }) {
           variant="c"
         />
 
+        <ProcessSteps
+          id="process"
+          eyebrow="상담 절차"
+          title="이렇게 진행됩니다"
+          steps={page.processSteps}
+          variant="c"
+          layout="vertical"
+        />
+
         <LocationSection
           id="location"
           title="오시는 길"
@@ -79,10 +99,21 @@ export function TemplateC({ page }: { page: LandingPage }) {
           region={page.region}
           phone={page.phone}
           kakaoUrl={page.kakaoUrl}
+          businessHours={page.companyInfo?.businessHours}
+          variant="c"
+        />
+
+        <TrustMetrics
+          id="metrics"
+          eyebrow="누적 실적"
+          title="숫자로 보는 신뢰"
+          metrics={page.metrics}
+          badges={page.trustBadges}
           variant="c"
         />
 
         <FAQSection
+          id="faq"
           title="자주 묻는 질문"
           description="상담 전 자주 궁금해하시는 내용을 모았습니다."
           faqs={page.faqs}
@@ -103,6 +134,7 @@ export function TemplateC({ page }: { page: LandingPage }) {
         industry={page.industry}
         phone={page.phone}
         address={page.address}
+        navItems={navItems}
         companyInfo={page.companyInfo}
         variant="c"
       />

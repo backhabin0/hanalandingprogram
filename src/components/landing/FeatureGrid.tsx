@@ -9,16 +9,10 @@ const VARIANT_SECTION: Record<LandingVariant, string> = {
   c: "bg-stone-50 border-stone-100",
 };
 
-const VARIANT_CARD: Record<LandingVariant, string> = {
-  a: "bg-white border-slate-200",
-  b: "bg-slate-900 border-white/10",
-  c: "bg-white border-stone-200",
-};
-
 const VARIANT_ICON: Record<LandingVariant, string> = {
-  a: "bg-blue-50",
-  b: "bg-amber-400/10",
-  c: "bg-orange-50",
+  a: "bg-blue-100 text-blue-700",
+  b: "bg-amber-400/15 text-amber-300",
+  c: "bg-orange-100 text-orange-700",
 };
 
 const VARIANT_TITLE: Record<LandingVariant, string> = {
@@ -31,6 +25,12 @@ const VARIANT_BODY: Record<LandingVariant, string> = {
   a: "text-slate-600",
   b: "text-slate-400",
   c: "text-stone-600",
+};
+
+const VARIANT_TOP_RULE: Record<LandingVariant, string> = {
+  a: "border-slate-200",
+  b: "border-white/10",
+  c: "border-stone-200",
 };
 
 export function FeatureGrid({
@@ -55,16 +55,13 @@ export function FeatureGrid({
       <div className="mx-auto max-w-[1360px] px-6 py-20 lg:px-10">
         <SectionHeading eyebrow={eyebrow} title={title} description={description} variant={variant} />
 
-        <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-14 grid grid-cols-1 gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feature) => (
-            <div
-              key={feature.id}
-              className={cn("rounded-2xl border p-6", VARIANT_CARD[variant])}
-            >
+            <div key={feature.id} className={cn("border-t pt-6", VARIANT_TOP_RULE[variant])}>
               {feature.icon && (
                 <div
                   className={cn(
-                    "mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-xl",
+                    "mb-5 flex h-12 w-12 items-center justify-center rounded-full text-xl",
                     VARIANT_ICON[variant]
                   )}
                   aria-hidden
@@ -72,10 +69,8 @@ export function FeatureGrid({
                   {feature.icon}
                 </div>
               )}
-              <h3 className={cn("text-base font-semibold", VARIANT_TITLE[variant])}>
-                {feature.title}
-              </h3>
-              <p className={cn("mt-2 text-sm leading-relaxed", VARIANT_BODY[variant])}>
+              <h3 className={cn("text-lg font-semibold", VARIANT_TITLE[variant])}>{feature.title}</h3>
+              <p className={cn("mt-2.5 text-sm leading-relaxed whitespace-pre-line", VARIANT_BODY[variant])}>
                 {feature.description}
               </p>
             </div>

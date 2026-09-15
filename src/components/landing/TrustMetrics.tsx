@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { LandingMetric } from "@/types/landing";
 import type { LandingVariant } from "./SiteHeader";
+import { SectionHeading } from "./SectionHeading";
 
 const VARIANT_SECTION: Record<LandingVariant, string> = {
   a: "bg-white border-slate-100",
@@ -33,16 +34,22 @@ const VARIANT_BADGE: Record<LandingVariant, string> = {
 };
 
 const VARIANT_DIVIDER: Record<LandingVariant, string> = {
-  a: "border-slate-100",
-  b: "border-white/10",
-  c: "border-stone-100",
+  a: "divide-slate-100 border-slate-100",
+  b: "divide-white/10 border-white/10",
+  c: "divide-stone-100 border-stone-100",
 };
 
 export function TrustMetrics({
+  id,
+  eyebrow,
+  title,
   metrics,
   badges,
   variant,
 }: {
+  id?: string;
+  eyebrow?: string;
+  title?: string;
   metrics: LandingMetric[];
   badges?: string[];
   variant: LandingVariant;
@@ -51,11 +58,21 @@ export function TrustMetrics({
   if (metrics.length === 0 && !hasBadges) return null;
 
   return (
-    <section className={cn("border-b", VARIANT_SECTION[variant])}>
+    <section id={id} className={cn("border-b", VARIANT_SECTION[variant])}>
       <div className="mx-auto max-w-[1360px] px-6 py-14 lg:px-10">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-          {metrics.map((metric) => (
-            <div key={metric.id}>
+        {title && (
+          <SectionHeading eyebrow={eyebrow} title={title} variant={variant} />
+        )}
+
+        <div
+          className={cn(
+            "grid grid-cols-2 gap-x-8 gap-y-10 md:grid-cols-4 md:divide-x",
+            title && "mt-10",
+            VARIANT_DIVIDER[variant]
+          )}
+        >
+          {metrics.map((metric, index) => (
+            <div key={metric.id} className={cn(index > 0 && "md:pl-8")}>
               <p className={cn("text-4xl font-bold tracking-tight lg:text-5xl", VARIANT_VALUE[variant])}>
                 {metric.value}
               </p>

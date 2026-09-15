@@ -404,6 +404,7 @@ export function LandingPageForm({
                   )}
                 </div>
                 <p className="mt-1 text-xs text-slate-500">{t.nameEn}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{t.purpose}</p>
               </div>
             </button>
           ))}

@@ -9,6 +9,12 @@ const VARIANT_SECTION: Record<LandingVariant, string> = {
   c: "bg-white border-stone-100",
 };
 
+const VARIANT_ACCENT: Record<LandingVariant, string> = {
+  a: "border-blue-600",
+  b: "border-amber-400",
+  c: "border-orange-600",
+};
+
 const VARIANT_GROUP_TITLE: Record<LandingVariant, string> = {
   a: "text-slate-900",
   b: "text-white",
@@ -19,6 +25,12 @@ const VARIANT_ROW_BORDER: Record<LandingVariant, string> = {
   a: "divide-slate-100 border-slate-200",
   b: "divide-white/10 border-white/10",
   c: "divide-stone-100 border-stone-200",
+};
+
+const VARIANT_STRIPE: Record<LandingVariant, string> = {
+  a: "even:bg-slate-50",
+  b: "even:bg-white/[0.03]",
+  c: "even:bg-stone-50",
 };
 
 const VARIANT_KEY: Record<LandingVariant, string> = {
@@ -63,27 +75,35 @@ export function SpecificationTable({
       <div className="mx-auto max-w-[1360px] px-6 py-20 lg:px-10">
         <SectionHeading eyebrow={eyebrow} title={title} description={description} variant={variant} />
 
-        <div className="mt-12 grid grid-cols-1 gap-x-12 gap-y-10 md:grid-cols-2">
+        <div className="mt-12 grid grid-cols-1 gap-x-12 gap-y-12 md:grid-cols-2">
           {Array.from(groups.entries()).map(([groupName, rows]) => (
             <div key={groupName}>
-              <h3 className={cn("mb-3 text-lg font-semibold", VARIANT_GROUP_TITLE[variant])}>
+              <h3
+                className={cn(
+                  "mb-4 border-l-4 pl-3 text-lg font-semibold",
+                  VARIANT_ACCENT[variant],
+                  VARIANT_GROUP_TITLE[variant]
+                )}
+              >
                 {groupName}
               </h3>
-              <table className={cn("w-full border-t text-sm", VARIANT_ROW_BORDER[variant])}>
-                <tbody className={cn("divide-y", VARIANT_ROW_BORDER[variant])}>
-                  {rows.map((row) => (
-                    <tr key={row.id}>
-                      <th
-                        scope="row"
-                        className={cn("w-1/3 py-3 pr-4 text-left font-medium", VARIANT_KEY[variant])}
-                      >
-                        {row.key}
-                      </th>
-                      <td className={cn("py-3 font-medium", VARIANT_VALUE[variant])}>{row.value}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto">
+                <table className={cn("w-full min-w-[280px] border-t text-sm", VARIANT_ROW_BORDER[variant])}>
+                  <tbody className={cn("divide-y", VARIANT_ROW_BORDER[variant])}>
+                    {rows.map((row) => (
+                      <tr key={row.id} className={VARIANT_STRIPE[variant]}>
+                        <th
+                          scope="row"
+                          className={cn("w-1/3 whitespace-nowrap py-3 pl-3 pr-4 text-left font-medium", VARIANT_KEY[variant])}
+                        >
+                          {row.key}
+                        </th>
+                        <td className={cn("py-3 pr-3 font-medium", VARIANT_VALUE[variant])}>{row.value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ))}
         </div>

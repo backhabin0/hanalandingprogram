@@ -11,11 +11,16 @@ export function ImagePlaceholder({
   ratio = "aspect-[4/3]",
   tone = "slate",
   className,
+  src,
+  rounded = true,
 }: {
   label: string;
   ratio?: string;
   tone?: "slate" | "blue" | "amber" | "orange" | "dark";
   className?: string;
+  /** Real image URL (`main_image_url` / `logo_url` / product `image_url`) — renders instead of the placeholder when present. */
+  src?: string;
+  rounded?: boolean;
 }) {
   const toneClasses: Record<string, string> = {
     slate: "from-slate-200 to-slate-100 text-slate-500",
@@ -25,11 +30,21 @@ export function ImagePlaceholder({
     dark: "from-slate-800 to-slate-900 text-slate-400",
   };
 
+  if (src) {
+    return (
+      <div className={cn("w-full overflow-hidden", ratio, rounded && "rounded-xl", className)}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-supplied URL, no remotePatterns config in this stage */}
+        <img src={src} alt={label} className="h-full w-full object-cover" />
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
-        "flex w-full items-center justify-center rounded-2xl bg-gradient-to-br",
+        "flex w-full items-center justify-center bg-gradient-to-br",
         ratio,
+        rounded && "rounded-xl",
         toneClasses[tone],
         className
       )}

@@ -1,6 +1,7 @@
 import type { LandingPage } from "@/types/landing";
 import { SiteHeader } from "../SiteHeader";
 import { Hero } from "../Hero";
+import { TrustMetrics } from "../TrustMetrics";
 import { ProductSection } from "../ProductSection";
 import { FeatureGrid } from "../FeatureGrid";
 import { SpecificationTable } from "../SpecificationTable";
@@ -9,25 +10,28 @@ import { FAQSection } from "../FAQSection";
 import { LeadSection } from "../LeadSection";
 import { SiteFooter } from "../SiteFooter";
 
-const NAV_ITEMS = [
-  { label: "제품", href: "#products" },
-  { label: "장점", href: "#features" },
-  { label: "사양", href: "#specifications" },
-  { label: "가격", href: "#pricing" },
-  { label: "FAQ", href: "#faq" },
-];
-
 /**
  * Template B — "제품 판매형" (Product Showcase).
- * For hardware/equipment/package sales and rentals. Dark canvas with a
- * strong accent to keep product imagery and pricing front and center.
+ * For hardware/equipment/package sales and rentals. Dark, high-contrast
+ * canvas that leads with the product image and price, not a services pitch.
  */
 export function TemplateB({ page }: { page: LandingPage }) {
+  const navItems = [
+    page.products.length > 0 && { label: "제품", href: "#products" },
+    page.features.length > 0 && { label: "장점", href: "#features" },
+    page.specifications.length > 0 && { label: "사양", href: "#specifications" },
+    (page.representativePrice || page.products.length > 0) && { label: "가격", href: "#pricing" },
+    page.faqs.length > 0 && { label: "FAQ", href: "#faq" },
+    { label: "문의", href: "#lead" },
+  ].filter((item): item is { label: string; href: string } => Boolean(item));
+
+  const heroProduct = page.products[0];
+
   return (
     <div className="bg-slate-950">
       <SiteHeader
         businessName={page.businessName}
-        navItems={NAV_ITEMS}
+        navItems={navItems}
         phone={page.phone}
         ctaLabel="지금 구매하기"
         variant="b"
@@ -41,6 +45,26 @@ export function TemplateB({ page }: { page: LandingPage }) {
           primaryCta={{ label: "지금 구매하기", href: "#pricing" }}
           secondaryCta={{ label: "제품 살펴보기", href: "#products" }}
           imageLabel={`${page.businessName} 대표 제품 이미지`}
+          imageUrl={page.mainImageUrl ?? heroProduct?.image}
+          variant="b"
+          imagePosition="left"
+          priceBadge={
+            page.representativePrice?.price
+              ? {
+                  label: page.representativePrice.label,
+                  price: page.representativePrice.price,
+                  unit: page.representativePrice.priceUnit,
+                }
+              : undefined
+          }
+        />
+
+        <TrustMetrics
+          id="highlights"
+          eyebrow="제품 하이라이트"
+          title="숫자로 보는 신뢰"
+          metrics={page.metrics}
+          badges={page.trustBadges}
           variant="b"
         />
 
@@ -65,7 +89,7 @@ export function TemplateB({ page }: { page: LandingPage }) {
           id="specifications"
           eyebrow="제품 사양"
           title="상세 스펙 안내"
-          description="구매 전 꼭 확인해야 할 카메라 및 저장장치 사양입니다."
+          description="구매 전 꼭 확인해야 할 사양입니다."
           specs={page.specifications}
           variant="b"
         />
@@ -81,6 +105,7 @@ export function TemplateB({ page }: { page: LandingPage }) {
         />
 
         <FAQSection
+          id="faq"
           title="자주 묻는 질문"
           description="구매 전 자주 문의되는 내용을 모았습니다."
           faqs={page.faqs}
@@ -101,6 +126,7 @@ export function TemplateB({ page }: { page: LandingPage }) {
         industry={page.industry}
         phone={page.phone}
         address={page.address}
+        navItems={navItems}
         companyInfo={page.companyInfo}
         variant="b"
       />

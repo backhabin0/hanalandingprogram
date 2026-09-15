@@ -79,7 +79,7 @@ export function FAQSection({
                     +
                   </span>
                 </summary>
-                <p className={cn("mt-3 pl-6 text-sm leading-relaxed", VARIANT_ANSWER[variant])}>
+                <p className={cn("mt-3 max-w-2xl whitespace-pre-line pl-6 text-sm leading-relaxed", VARIANT_ANSWER[variant])}>
                   {faq.answer}
                 </p>
               </details>
