@@ -55,6 +55,7 @@ type LandingProductRow = {
   cta_text: string | null;
   sort_order: number;
   is_active: boolean;
+  item_type: string;
   created_at: string;
   updated_at: string;
 };
@@ -166,12 +167,35 @@ type LandingSeoSettingsRow = {
   seo_noindex: boolean;
   business_category: string | null;
   service_area: string | null;
+  primary_keyword: string | null;
+  secondary_keywords: string[] | null;
+  search_intent: string | null;
+  locality_description: string | null;
   created_at: string;
   updated_at: string;
 };
 type LandingSeoSettingsInsert = Pick<LandingSeoSettingsRow, "landing_page_id"> &
   Partial<Omit<LandingSeoSettingsRow, "landing_page_id">>;
 type LandingSeoSettingsUpdate = Partial<LandingSeoSettingsRow>;
+
+type LandingCaseRow = {
+  id: string;
+  landing_page_id: string;
+  product_id: string | null;
+  title: string;
+  description: string | null;
+  region: string | null;
+  industry: string | null;
+  case_date: string | null;
+  image_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+type LandingCaseInsert = Pick<LandingCaseRow, "landing_page_id" | "title"> &
+  Partial<Omit<LandingCaseRow, "landing_page_id" | "title">>;
+type LandingCaseUpdate = Partial<LandingCaseRow>;
 
 export type Database = {
   // Without this marker, @supabase/supabase-js's SupabaseClient generic
@@ -242,6 +266,12 @@ export type Database = {
         Row: LandingSeoSettingsRow;
         Insert: LandingSeoSettingsInsert;
         Update: LandingSeoSettingsUpdate;
+        Relationships: [];
+      };
+      landing_cases: {
+        Row: LandingCaseRow;
+        Insert: LandingCaseInsert;
+        Update: LandingCaseUpdate;
         Relationships: [];
       };
     };

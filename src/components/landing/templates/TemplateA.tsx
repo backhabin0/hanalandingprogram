@@ -7,6 +7,8 @@ import { FeatureGrid } from "../FeatureGrid";
 import { ProcessSteps } from "../ProcessSteps";
 import { PricingSection } from "../PricingSection";
 import { SpecificationTable } from "../SpecificationTable";
+import { CaseStudiesSection } from "../CaseStudiesSection";
+import { LocationSection } from "../LocationSection";
 import { FAQSection } from "../FAQSection";
 import { LeadSection } from "../LeadSection";
 import { SiteFooter } from "../SiteFooter";
@@ -91,6 +93,26 @@ export function TemplateA({ page }: { page: LandingPage }) {
           title="표준 사양 안내"
           description="구성 요소별 기본 사양입니다. 현장 조건에 따라 별도 옵션을 제안할 수 있습니다."
           specs={page.specifications}
+          variant="a"
+        />
+
+        <CaseStudiesSection
+          id="cases"
+          eyebrow="시공 사례"
+          title="실제 설치·시공 사례"
+          cases={page.cases ?? []}
+          variant="a"
+        />
+
+        <LocationSection
+          id="location"
+          title="서비스 지역 안내"
+          address={page.address}
+          region={page.region}
+          phone={page.phone}
+          kakaoUrl={page.kakaoUrl}
+          businessHours={page.companyInfo?.businessHours}
+          localityDescription={page.seo?.localityDescription}
           variant="a"
         />
 

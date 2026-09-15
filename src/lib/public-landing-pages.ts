@@ -2,6 +2,7 @@ import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 import {
+  mapCaseRow,
   mapCompanyInfoRow,
   mapFaqRow,
   mapFeatureRow,
@@ -39,6 +40,7 @@ type LandingFaqRow = Database["public"]["Tables"]["landing_faqs"]["Row"];
 type LandingProcessStepRow = Database["public"]["Tables"]["landing_process_steps"]["Row"];
 type LandingCompanyInfoRow = Database["public"]["Tables"]["landing_company_info"]["Row"];
 type LandingSeoSettingsRow = Database["public"]["Tables"]["landing_page_seo_settings"]["Row"];
+type LandingCaseRow = Database["public"]["Tables"]["landing_cases"]["Row"];
 
 /**
  * A real Supabase/PostgREST failure (network, malformed query, etc.) is
@@ -171,6 +173,20 @@ async function getPublicSeoSettings(landingPageId: string) {
   return data ? mapSeoSettingsRow(data as LandingSeoSettingsRow) : null;
 }
 
+async function getPublicCases(landingPageId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("landing_cases")
+    .select("*")
+    .eq("landing_page_id", landingPageId)
+    .eq("is_active", true)
+    .order("sort_order", CHILD_ORDER)
+    .order("created_at", CHILD_ORDER);
+
+  if (error) failLoad("landing_cases", error);
+  return ((data ?? []) as LandingCaseRow[]).map(mapCaseRow);
+}
+
 /**
  * Everything the `/[slug]` route needs for one public landing page, or
  * `null` if the slug doesn't exist / isn't public. Wrapped in React `cache`
@@ -186,7 +202,7 @@ export const getPublicLandingPageFullBySlug = cache(
 
     const page = mapPageRow(row as LandingPageRow);
 
-    const [products, features, metrics, specifications, faqs, processSteps, companyInfo, seo] =
+    const [products, features, metrics, specifications, faqs, processSteps, companyInfo, seo, cases] =
       await Promise.all([
         getPublicProducts(page.id),
         getPublicFeatures(page.id),
@@ -196,6 +212,7 @@ export const getPublicLandingPageFullBySlug = cache(
         getPublicProcessSteps(page.id),
         getPublicCompanyInfo(page.id),
         getPublicSeoSettings(page.id),
+        getPublicCases(page.id),
       ]);
 
     return {
@@ -208,6 +225,7 @@ export const getPublicLandingPageFullBySlug = cache(
       processSteps,
       companyInfo: companyInfo ?? undefined,
       seo: seo ?? undefined,
+      cases,
     };
   }
 );

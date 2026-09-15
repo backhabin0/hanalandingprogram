@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 import type {
+  LandingCase,
   LandingCompanyInfo,
   LandingFaq,
   LandingFeature,
@@ -40,6 +41,7 @@ type LandingSpecificationRow = Database["public"]["Tables"]["landing_specificati
 type LandingFaqRow = Database["public"]["Tables"]["landing_faqs"]["Row"];
 type LandingProcessStepRow = Database["public"]["Tables"]["landing_process_steps"]["Row"];
 type LandingCompanyInfoRow = Database["public"]["Tables"]["landing_company_info"]["Row"];
+type LandingCaseRow = Database["public"]["Tables"]["landing_cases"]["Row"];
 type LandingSeoSettingsRow = Database["public"]["Tables"]["landing_page_seo_settings"]["Row"];
 
 const CHILD_ORDER = { ascending: true } as const;
@@ -110,6 +112,7 @@ export function mapProductRow(row: LandingProductRow): LandingProduct {
     ctaText: row.cta_text ?? undefined,
     sortOrder: row.sort_order,
     isActive: row.is_active,
+    itemType: row.item_type === "service" ? "service" : "product",
   };
 }
 
@@ -193,6 +196,25 @@ export function mapSeoSettingsRow(row: LandingSeoSettingsRow): LandingSeoMeta {
     noindex: row.seo_noindex,
     businessCategory: row.business_category ?? undefined,
     serviceArea: row.service_area ?? undefined,
+    primaryKeyword: row.primary_keyword ?? undefined,
+    secondaryKeywords: row.secondary_keywords ?? undefined,
+    searchIntent: row.search_intent ?? undefined,
+    localityDescription: row.locality_description ?? undefined,
+  };
+}
+
+export function mapCaseRow(row: LandingCaseRow): LandingCase {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? undefined,
+    region: row.region ?? undefined,
+    industry: row.industry ?? undefined,
+    caseDate: row.case_date ?? undefined,
+    imageUrl: row.image_url ?? undefined,
+    productId: row.product_id ?? undefined,
+    sortOrder: row.sort_order,
+    isActive: row.is_active,
   };
 }
 
@@ -346,6 +368,19 @@ export async function getLandingPageSeoSettings(landingPageId: string): Promise<
   return data ? mapSeoSettingsRow(data) : null;
 }
 
+export async function getLandingCases(landingPageId: string): Promise<LandingCase[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("landing_cases")
+    .select("*")
+    .eq("landing_page_id", landingPageId)
+    .order("sort_order", CHILD_ORDER)
+    .order("created_at", CHILD_ORDER);
+
+  if (error) throw error;
+  return (data ?? []).map(mapCaseRow);
+}
+
 // ---------------------------------------------------------------------------
 // Combined fetch
 // ---------------------------------------------------------------------------
@@ -360,7 +395,7 @@ export async function getLandingPageFullBySlug(slug: string): Promise<LandingPag
   const page = await getLandingPageBySlug(slug);
   if (!page) return null;
 
-  const [products, features, metrics, specifications, faqs, processSteps, companyInfo, seo] =
+  const [products, features, metrics, specifications, faqs, processSteps, companyInfo, seo, cases] =
     await Promise.all([
       getLandingProducts(page.id),
       getLandingFeatures(page.id),
@@ -370,6 +405,7 @@ export async function getLandingPageFullBySlug(slug: string): Promise<LandingPag
       getLandingProcessSteps(page.id),
       getLandingCompanyInfo(page.id),
       getLandingPageSeoSettings(page.id),
+      getLandingCases(page.id),
     ]);
 
   return {
@@ -382,5 +418,6 @@ export async function getLandingPageFullBySlug(slug: string): Promise<LandingPag
     processSteps,
     companyInfo: companyInfo ?? undefined,
     seo: seo ?? undefined,
+    cases,
   };
 }

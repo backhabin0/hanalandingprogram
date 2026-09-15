@@ -122,6 +122,7 @@ export function SpecificationsEditor({
               </div>
               <FormField label="적용 대상" hint="특정 제품을 선택하면 그 제품의 사양으로 연결됩니다.">
                 <Select
+                  key={`productId-${item.key}-${syncTick}`}
                   name={`specifications[${index}].productId`}
                   value={item.productId}
                   onChange={(e) => updateItem(index, { productId: e.target.value })}

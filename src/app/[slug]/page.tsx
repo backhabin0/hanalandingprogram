@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPublicLandingPageFullBySlug } from "@/lib/public-landing-pages";
+import { resolveLandingPageSeo } from "@/lib/seo/resolve";
 import { LandingPageRenderer } from "@/components/landing/LandingPageRenderer";
 
 /**
  * Real customer landing pages, served straight from the DB. Admin edits a
  * page and flips it to public — the very next request here must show it,
- * so this route intentionally never opts into static/ISR caching (Stage 9
- * adds real SEO; this stays force-dynamic until then).
+ * so this route intentionally never opts into static/ISR caching.
  */
 export const dynamic = "force-dynamic";
 
@@ -25,9 +25,29 @@ export async function generateMetadata({ params }: PublicLandingPageProps): Prom
     };
   }
 
+  const seo = resolveLandingPageSeo(page);
+
   return {
-    title: page.title || page.heroTitle,
-    description: page.description || page.heroDescription || `${page.businessName} 공식 안내 페이지`,
+    // `title.absolute` bypasses the root layout's "%s | Hana LP Studio"
+    // template — a customer's public page must not carry this CMS's own
+    // branding suffix in its search-result title.
+    title: { absolute: seo.title },
+    description: seo.description,
+    alternates: { canonical: seo.canonical },
+    robots: seo.robots,
+    openGraph: {
+      title: seo.ogTitle,
+      description: seo.ogDescription,
+      url: seo.canonical,
+      type: "website",
+      images: seo.ogImage ? [{ url: seo.ogImage }] : undefined,
+    },
+    twitter: {
+      card: seo.twitterCard,
+      title: seo.ogTitle,
+      description: seo.ogDescription,
+      images: seo.ogImage ? [seo.ogImage] : undefined,
+    },
   };
 }
 

@@ -6,6 +6,7 @@ import { ProductSection } from "../ProductSection";
 import { PricingSection } from "../PricingSection";
 import { ProcessSteps } from "../ProcessSteps";
 import { LocationSection } from "../LocationSection";
+import { CaseStudiesSection } from "../CaseStudiesSection";
 import { TrustMetrics } from "../TrustMetrics";
 import { FAQSection } from "../FAQSection";
 import { LeadSection } from "../LeadSection";
@@ -100,6 +101,15 @@ export function TemplateC({ page }: { page: LandingPage }) {
           phone={page.phone}
           kakaoUrl={page.kakaoUrl}
           businessHours={page.companyInfo?.businessHours}
+          localityDescription={page.seo?.localityDescription}
+          variant="c"
+        />
+
+        <CaseStudiesSection
+          id="cases"
+          eyebrow="이용 사례"
+          title="실제 이용 사례"
+          cases={page.cases ?? []}
           variant="c"
         />
 

@@ -36,6 +36,7 @@ export function LocationSection({
   phone,
   kakaoUrl,
   businessHours,
+  localityDescription,
   variant,
 }: {
   id?: string;
@@ -46,15 +47,23 @@ export function LocationSection({
   phone?: string;
   kakaoUrl?: string;
   businessHours?: string;
+  /** Real sentence from admin-entered SEO settings — never generated. */
+  localityDescription?: string;
   variant: LandingVariant;
 }) {
-  if (!address && !region && !phone && !kakaoUrl && !businessHours) return null;
+  if (!address && !region && !phone && !kakaoUrl && !businessHours && !localityDescription) return null;
 
   return (
     <section id={id} className={cn("border-b", VARIANT_SECTION[variant])}>
       <div className="mx-auto grid max-w-[1360px] items-center gap-14 px-6 py-20 lg:grid-cols-2 lg:px-10">
         <div>
           <SectionHeading title={title} description={description} variant={variant} />
+
+          {localityDescription && (
+            <p className={cn("mt-6 whitespace-pre-line text-base leading-relaxed", VARIANT_VALUE[variant])}>
+              {localityDescription}
+            </p>
+          )}
 
           <dl className="mt-8 grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
             {address && (

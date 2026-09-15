@@ -30,6 +30,9 @@ export interface LandingPriceSummary {
   description?: string;
 }
 
+/** Which schema.org type a product-table row should be announced as. */
+export type LandingItemType = "product" | "service";
+
 /** One product or service line item inside a landing page. */
 export interface LandingProduct {
   id: string;
@@ -47,6 +50,8 @@ export interface LandingProduct {
   sortOrder: number;
   /** Soft-hide without deleting. Defaults to true; DB-sourced data only. */
   isActive?: boolean;
+  /** Drives Product vs Service JSON-LD. Undefined (pre-Stage-8 rows) is treated as "product". */
+  itemType?: LandingItemType;
 }
 
 /** A single differentiator / feature card. */
@@ -119,6 +124,7 @@ export interface LandingCompanyInfo {
 export interface LandingSeoMeta {
   metaTitle?: string;
   metaDescription?: string;
+  /** Legacy free-form keyword list — kept for schema compatibility, never rendered as a meta keywords tag. */
   keywords?: string[];
   ogTitle?: string;
   ogDescription?: string;
@@ -126,6 +132,29 @@ export interface LandingSeoMeta {
   noindex?: boolean;
   businessCategory?: string;
   serviceArea?: string;
+  /** Content-guide only (title/body quality checks, duplicate-keyword warnings) — never rendered as a meta keywords tag. */
+  primaryKeyword?: string;
+  secondaryKeywords?: string[];
+  /** Free-text admin note, e.g. "local_service" — not validated against an enum. */
+  searchIntent?: string;
+  /** Real sentence describing the service area — shown in on-page HTML, not just metadata. */
+  localityDescription?: string;
+}
+
+/** One install/service case study — local-SEO content depth. */
+export interface LandingCase {
+  id: string;
+  title: string;
+  description?: string;
+  region?: string;
+  industry?: string;
+  /** ISO date string (yyyy-mm-dd), if provided. */
+  caseDate?: string;
+  imageUrl?: string;
+  /** Set when this case is about one specific product/service. */
+  productId?: string;
+  sortOrder: number;
+  isActive?: boolean;
 }
 
 /**
@@ -164,6 +193,8 @@ export interface LandingPage {
   specifications: LandingSpecification[];
   faqs: LandingFaq[];
   processSteps: LandingProcessStep[];
+  /** Undefined on pre-Stage-8 callers (e.g. mock/preview data) — treat as no cases. */
+  cases?: LandingCase[];
 
   /** Short trust labels, e.g. "정보보호 인증", "10년 연속 무사고 시공". */
   trustBadges?: string[];

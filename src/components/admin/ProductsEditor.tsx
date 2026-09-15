@@ -2,9 +2,9 @@
 
 import { useActionState, useState } from "react";
 import { FormField, FormSection } from "@/components/admin/FormField";
-import { Input, Textarea } from "@/components/admin/FormControls";
+import { Input, Select, Textarea } from "@/components/admin/FormControls";
 import { ActiveToggle, EditorSaveBar, ReorderControls } from "@/components/admin/EditorControls";
-import type { LandingProduct } from "@/types/landing";
+import type { LandingItemType, LandingProduct } from "@/types/landing";
 import { saveLandingProductsAction, type ProductsFormState } from "@/app/admin/pages/[id]/edit/actions";
 
 function newKey(): string {
@@ -23,6 +23,7 @@ interface ProductDraft {
   priceNote: string;
   ctaText: string;
   isActive: boolean;
+  itemType: LandingItemType;
 }
 
 function toDraft(product: LandingProduct): ProductDraft {
@@ -38,6 +39,7 @@ function toDraft(product: LandingProduct): ProductDraft {
     priceNote: product.priceNote ?? "",
     ctaText: product.ctaText ?? "",
     isActive: product.isActive ?? true,
+    itemType: product.itemType ?? "product",
   };
 }
 
@@ -53,6 +55,7 @@ function emptyDraft(): ProductDraft {
     priceNote: "",
     ctaText: "",
     isActive: true,
+    itemType: "product",
   };
 }
 
@@ -150,6 +153,21 @@ export function ProductsEditor({
                   )}
                 </div>
               </div>
+
+              <FormField
+                label="유형"
+                hint="검색엔진에 제품(Product)으로 알릴지, 서비스(Service)로 알릴지 결정합니다."
+              >
+                <Select
+                  key={`itemType-${item.key}-${syncTick}`}
+                  name={`products[${index}].itemType`}
+                  value={item.itemType}
+                  onChange={(e) => updateItem(index, { itemType: e.target.value as LandingItemType })}
+                >
+                  <option value="product">제품 (Product)</option>
+                  <option value="service">서비스 (Service)</option>
+                </Select>
+              </FormField>
 
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <FormField label="서비스명">

@@ -5,6 +5,8 @@ import { TrustMetrics } from "../TrustMetrics";
 import { ProductSection } from "../ProductSection";
 import { FeatureGrid } from "../FeatureGrid";
 import { SpecificationTable } from "../SpecificationTable";
+import { CaseStudiesSection } from "../CaseStudiesSection";
+import { LocationSection } from "../LocationSection";
 import { PricingSection } from "../PricingSection";
 import { FAQSection } from "../FAQSection";
 import { LeadSection } from "../LeadSection";
@@ -101,6 +103,26 @@ export function TemplateB({ page }: { page: LandingPage }) {
           description="패키지별 구성과 가격을 비교해 보고 가장 적합한 옵션을 선택하세요."
           mode="tiers"
           products={page.products}
+          variant="b"
+        />
+
+        <CaseStudiesSection
+          id="cases"
+          eyebrow="구매/설치 사례"
+          title="실제 도입 사례"
+          cases={page.cases ?? []}
+          variant="b"
+        />
+
+        <LocationSection
+          id="location"
+          title="서비스 지역 안내"
+          address={page.address}
+          region={page.region}
+          phone={page.phone}
+          kakaoUrl={page.kakaoUrl}
+          businessHours={page.companyInfo?.businessHours}
+          localityDescription={page.seo?.localityDescription}
           variant="b"
         />
 

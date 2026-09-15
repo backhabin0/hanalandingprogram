@@ -118,6 +118,21 @@ export function LandingPageForm({
   const [template, setTemplate] = useState<LandingTemplateId>(initialValues?.template ?? "template-a");
   const [status, setStatus] = useState<LandingPageStatus>(initialValues?.status ?? "private");
 
+  // Same fix as every child editor's ActiveToggle/Select (see ProductsEditor):
+  // a <form action> does a native reset once the action settles, which
+  // writes the hidden template/status inputs' DOM value directly. If that
+  // happens to differ from what's actually selected, React's prop diff can
+  // skip rewriting it on the next render, so the WRONG value would be
+  // submitted on the next save even though the UI still shows the right
+  // template/status. Remounting on every settle forces a fresh, correct
+  // DOM write regardless of what the native reset did.
+  const [syncedActionState, setSyncedActionState] = useState(state);
+  const [syncTick, setSyncTick] = useState(0);
+  if (state !== syncedActionState) {
+    setSyncedActionState(state);
+    setSyncTick((t) => t + 1);
+  }
+
   return (
     <>
     <form id="landing-page-form" action={formAction} className="space-y-6">
@@ -395,8 +410,8 @@ export function LandingPageForm({
       속성으로 원래 폼에 연결한다.
     */}
     <div className="mt-6 space-y-6">
-      <input type="hidden" name="template" value={template} readOnly form="landing-page-form" />
-      <input type="hidden" name="status" value={status} readOnly form="landing-page-form" />
+      <input key={`template-${syncTick}`} type="hidden" name="template" value={template} readOnly form="landing-page-form" />
+      <input key={`status-${syncTick}`} type="hidden" name="status" value={status} readOnly form="landing-page-form" />
 
       <FormSection title="템플릿 선택" description="업종과 목적에 맞는 템플릿을 선택하세요.">
         <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
@@ -438,6 +453,7 @@ export function LandingPageForm({
       <FormSection title="공개 상태" description="페이지를 바로 공개할지, 초안으로 저장할지 선택합니다.">
         <FormField label="공개 상태">
           <Select
+            key={`status-select-${syncTick}`}
             value={status}
             onChange={(e) => setStatus(e.target.value as LandingPageStatus)}
             form="landing-page-form"
