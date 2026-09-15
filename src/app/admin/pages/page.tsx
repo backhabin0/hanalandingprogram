@@ -82,7 +82,7 @@ export default async function AdminPagesListPage() {
                             href={`/admin/pages/${page.id}/edit`}
                             className="rounded-md px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100"
                           >
-                            수정
+                            콘텐츠 편집
                           </Link>
                           <Link
                             href={`/preview/${page.template}`}

@@ -119,10 +119,8 @@ export function LandingPageForm({
   const [status, setStatus] = useState<LandingPageStatus>(initialValues?.status ?? "private");
 
   return (
-    <form action={formAction} className="space-y-6">
-      <input type="hidden" name="template" value={template} readOnly />
-      <input type="hidden" name="status" value={status} readOnly />
-
+    <>
+    <form id="landing-page-form" action={formAction} className="space-y-6">
       {state.error && (
         <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
           {state.error}
@@ -210,6 +208,7 @@ export function LandingPageForm({
         </div>
       </FormSection>
 
+      {mode === "create" && (
       <FormSection
         title="제품 / 서비스"
         description="하나의 랜딩페이지에 여러 제품 또는 서비스를 등록할 수 있습니다. 이름이 비어있는 항목은 저장되지 않습니다."
@@ -283,6 +282,7 @@ export function LandingPageForm({
           + 제품/서비스 추가
         </button>
       </FormSection>
+      )}
 
       <FormSection
         title="가격"
@@ -321,6 +321,7 @@ export function LandingPageForm({
         </FormField>
       </FormSection>
 
+      {mode === "create" && (
       <FormSection
         title="핵심 특징"
         description="차별점이나 강점을 카드 형태로 보여줍니다. 제목이 비어있는 항목은 저장되지 않습니다."
@@ -369,6 +370,7 @@ export function LandingPageForm({
           + 특징 추가
         </button>
       </FormSection>
+      )}
 
       <FormSection title="이미지" description="Hero 및 제품 이미지를 등록합니다.">
         <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
@@ -380,16 +382,38 @@ export function LandingPageForm({
           </div>
         </div>
       </FormSection>
+    </form>
+
+    {/*
+      템플릿 선택 카드는 MiniTemplatePreview로 실제 Template(Header/Hero/LeadSection의
+      <form> 포함)을 그대로 축소 렌더링한다. 그 결과물이 <form>과 <button>을 담고
+      있어서, 이 섹션을 위 <form id="landing-page-form"> 안에 두거나 카드 자체를
+      <button>으로 감싸면 <form> 안에 <form>, <button> 안에 <button>이 중첩되는
+      유효하지 않은 HTML이 되어 hydration이 깨지고 폼 제출이 실패한다(Stage 7에서
+      발견). 그래서 이 구간 전체를 <form> 바깥의 형제 요소로 두고, 카드는 버튼이
+      아닌 role="button" div로, 실제 제출 대상 필드들은 form="landing-page-form"
+      속성으로 원래 폼에 연결한다.
+    */}
+    <div className="mt-6 space-y-6">
+      <input type="hidden" name="template" value={template} readOnly form="landing-page-form" />
+      <input type="hidden" name="status" value={status} readOnly form="landing-page-form" />
 
       <FormSection title="템플릿 선택" description="업종과 목적에 맞는 템플릿을 선택하세요.">
         <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
           {templates.map((t) => (
-            <button
+            <div
               key={t.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => setTemplate(t.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setTemplate(t.id);
+                }
+              }}
               className={cn(
-                "overflow-hidden rounded-xl border-2 text-left transition",
+                "cursor-pointer overflow-hidden rounded-xl border-2 text-left transition",
                 template === t.id ? "border-blue-500 ring-2 ring-blue-100" : "border-slate-200 hover:border-slate-300"
               )}
             >
@@ -406,14 +430,18 @@ export function LandingPageForm({
                 <p className="mt-1 text-xs text-slate-500">{t.nameEn}</p>
                 <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{t.purpose}</p>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </FormSection>
 
       <FormSection title="공개 상태" description="페이지를 바로 공개할지, 초안으로 저장할지 선택합니다.">
         <FormField label="공개 상태">
-          <Select value={status} onChange={(e) => setStatus(e.target.value as LandingPageStatus)}>
+          <Select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as LandingPageStatus)}
+            form="landing-page-form"
+          >
             <option value="private">비공개 (초안)</option>
             <option value="public">공개</option>
           </Select>
@@ -421,6 +449,9 @@ export function LandingPageForm({
       </FormSection>
 
       <div className="flex items-center justify-end gap-3 pb-4">
+        {!pending && state !== initialFormState && !state.error && (
+          <p className="text-sm text-emerald-600">저장되었습니다.</p>
+        )}
         <Link
           href="/admin/pages"
           className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
@@ -429,12 +460,14 @@ export function LandingPageForm({
         </Link>
         <button
           type="submit"
+          form="landing-page-form"
           disabled={pending}
           className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? "저장 중..." : mode === "create" ? "랜딩페이지 생성" : "변경사항 저장"}
         </button>
       </div>
-    </form>
+    </div>
+    </>
   );
 }

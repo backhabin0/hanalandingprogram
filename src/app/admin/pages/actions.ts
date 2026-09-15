@@ -2,11 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { PostgrestError } from "@supabase/supabase-js";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { validateSlug } from "@/lib/slug";
 import { isSafeHttpUrl } from "@/lib/validation";
+import { mapSupabaseError } from "@/lib/supabase-errors";
+import { getString, toNullable, parseIndexedGroups } from "@/lib/form-data";
 import type { Database } from "@/lib/supabase/database.types";
 import type { LandingPageStatus, LandingTemplateId } from "@/types/landing";
 
@@ -39,53 +40,6 @@ const MAX_LENGTH = {
   featureTitle: 150,
   icon: 20,
 } as const;
-
-// ---------------------------------------------------------------------------
-// Error mapping — never surface raw Postgres/PostgREST error text.
-// ---------------------------------------------------------------------------
-
-function mapSupabaseError(error: PostgrestError): string {
-  if (error.code === "23505") return "이미 사용 중인 URL입니다.";
-  if (error.code === "42501") return "저장 권한을 확인해주세요.";
-  return "저장 중 문제가 발생했습니다.";
-}
-
-// ---------------------------------------------------------------------------
-// FormData helpers
-// ---------------------------------------------------------------------------
-
-function getString(formData: FormData, key: string): string {
-  const value = formData.get(key);
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function toNullable(value: string): string | null {
-  return value === "" ? null : value;
-}
-
-/**
- * Reads indexed, dotted field groups out of FormData —
- * `products[0].name`, `products[0].shortDescription`, etc — back into an
- * ordered array of `{ name: "...", shortDescription: "..." }` objects.
- */
-function parseIndexedGroups(formData: FormData, prefix: string): Record<string, string>[] {
-  const pattern = new RegExp(`^${prefix}\\[(\\d+)\\]\\.(\\w+)$`);
-  const groups = new Map<number, Record<string, string>>();
-
-  for (const [key, value] of formData.entries()) {
-    const match = pattern.exec(key);
-    if (!match || typeof value !== "string") continue;
-
-    const index = Number(match[1]);
-    const field = match[2];
-    if (!groups.has(index)) groups.set(index, {});
-    groups.get(index)![field] = value.trim();
-  }
-
-  return Array.from(groups.keys())
-    .sort((a, b) => a - b)
-    .map((index) => groups.get(index)!);
-}
 
 // ---------------------------------------------------------------------------
 // Field parsing + validation
@@ -254,9 +208,17 @@ export async function createLandingPageAction(
 
   revalidatePath("/admin");
   revalidatePath("/admin/pages");
-  redirect("/admin/pages");
+  redirect(`/admin/pages/${page.id}/edit`);
 }
 
+/**
+ * Updates only the `landing_pages` row itself (business info, Hero,
+ * representative price, template, status). Products/features and every
+ * other child table get their own save button/action on the edit page — see
+ * `[id]/edit/actions.ts` — so this one never touches child tables and never
+ * needs to navigate away; the admin stays on the edit page to keep working
+ * through the rest of the content.
+ */
 export async function updateLandingPageAction(
   id: string,
   _prevState: LandingPageFormState,
@@ -267,41 +229,15 @@ export async function updateLandingPageAction(
   const parsed = parseLandingPageFields(formData);
   if ("error" in parsed) return { error: parsed.error };
 
-  const products = parseProducts(formData);
-  const features = parseFeatures(formData);
-
   const supabase = await createSupabaseServerClient();
 
   const { error: updateError } = await supabase.from("landing_pages").update(parsed.data).eq("id", id);
   if (updateError) return { error: mapSupabaseError(updateError) };
 
-  // No stable per-row ids come back from this form (Stage 7 builds that
-  // editor), so children are replaced wholesale: delete this page's
-  // existing products/features, then re-insert the current form state.
-  const [deleteProducts, deleteFeatures] = await Promise.all([
-    supabase.from("landing_products").delete().eq("landing_page_id", id),
-    supabase.from("landing_features").delete().eq("landing_page_id", id),
-  ]);
-  if (deleteProducts.error || deleteFeatures.error) {
-    return { error: "저장 중 문제가 발생했습니다." };
-  }
-
-  const [insertProducts, insertFeatures] = await Promise.all([
-    products.length > 0
-      ? supabase.from("landing_products").insert(products.map((p) => ({ ...p, landing_page_id: id })))
-      : Promise.resolve({ error: null }),
-    features.length > 0
-      ? supabase.from("landing_features").insert(features.map((f) => ({ ...f, landing_page_id: id })))
-      : Promise.resolve({ error: null }),
-  ]);
-  if (insertProducts.error || insertFeatures.error) {
-    return { error: "저장 중 문제가 발생했습니다." };
-  }
-
   revalidatePath("/admin");
   revalidatePath("/admin/pages");
   revalidatePath(`/admin/pages/${id}/edit`);
-  redirect("/admin/pages");
+  return { error: null };
 }
 
 export async function deleteLandingPageAction(id: string): Promise<void> {
