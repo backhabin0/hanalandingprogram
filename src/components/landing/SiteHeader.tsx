@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn, toTelHref } from "@/lib/utils";
 
 export type LandingVariant = "a" | "b" | "c";
 
@@ -70,7 +70,7 @@ export function SiteHeader({
         <div className="flex items-center gap-4">
           {phone && (
             <a
-              href={`tel:${phone}`}
+              href={toTelHref(phone)}
               className="hidden text-sm font-semibold sm:inline-block"
             >
               {phone}

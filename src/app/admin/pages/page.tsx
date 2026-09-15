@@ -55,7 +55,20 @@ export default async function AdminPagesListPage() {
                         <p className="font-medium text-slate-900">{page.businessName}</p>
                         <p className="text-xs text-slate-400">{page.title}</p>
                       </td>
-                      <td className="px-6 py-4 font-mono text-xs text-slate-500">/{page.slug}</td>
+                      <td className="px-6 py-4 font-mono text-xs">
+                        {page.status === "public" ? (
+                          <Link
+                            href={`/${page.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            /{page.slug}
+                          </Link>
+                        ) : (
+                          <span className="text-slate-400">/{page.slug}</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 text-slate-600">{template?.name ?? page.template}</td>
                       <td className="px-6 py-4">
                         <PageStatusBadge status={page.status} />

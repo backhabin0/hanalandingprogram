@@ -48,7 +48,7 @@ const CHILD_ORDER = { ascending: true } as const;
 // Row → domain type mappers
 // ---------------------------------------------------------------------------
 
-function mapPageRow(row: LandingPageRow): LandingPageRecord {
+export function mapPageRow(row: LandingPageRow): LandingPageRecord {
   const representativePrice: LandingPriceSummary | undefined =
     row.price_label || row.price || row.price_unit || row.price_description
       ? {
@@ -96,7 +96,7 @@ function mapPageSummaryRow(row: LandingPageRow): LandingPageSummary {
   };
 }
 
-function mapProductRow(row: LandingProductRow): LandingProduct {
+export function mapProductRow(row: LandingProductRow): LandingProduct {
   return {
     id: row.id,
     name: row.name,
@@ -113,7 +113,7 @@ function mapProductRow(row: LandingProductRow): LandingProduct {
   };
 }
 
-function mapFeatureRow(row: LandingFeatureRow): LandingFeature {
+export function mapFeatureRow(row: LandingFeatureRow): LandingFeature {
   return {
     id: row.id,
     title: row.title,
@@ -124,7 +124,7 @@ function mapFeatureRow(row: LandingFeatureRow): LandingFeature {
   };
 }
 
-function mapMetricRow(row: LandingMetricRow): LandingMetric {
+export function mapMetricRow(row: LandingMetricRow): LandingMetric {
   return {
     id: row.id,
     label: row.label,
@@ -135,7 +135,7 @@ function mapMetricRow(row: LandingMetricRow): LandingMetric {
   };
 }
 
-function mapSpecificationRow(row: LandingSpecificationRow): LandingSpecification {
+export function mapSpecificationRow(row: LandingSpecificationRow): LandingSpecification {
   return {
     id: row.id,
     key: row.spec_key,
@@ -147,7 +147,7 @@ function mapSpecificationRow(row: LandingSpecificationRow): LandingSpecification
   };
 }
 
-function mapFaqRow(row: LandingFaqRow): LandingFaq {
+export function mapFaqRow(row: LandingFaqRow): LandingFaq {
   return {
     id: row.id,
     question: row.question,
@@ -157,7 +157,7 @@ function mapFaqRow(row: LandingFaqRow): LandingFaq {
   };
 }
 
-function mapProcessStepRow(row: LandingProcessStepRow): LandingProcessStep {
+export function mapProcessStepRow(row: LandingProcessStepRow): LandingProcessStep {
   return {
     id: row.id,
     step: row.step_number ?? row.sort_order,
@@ -168,7 +168,7 @@ function mapProcessStepRow(row: LandingProcessStepRow): LandingProcessStep {
   };
 }
 
-function mapCompanyInfoRow(row: LandingCompanyInfoRow): LandingCompanyInfo {
+export function mapCompanyInfoRow(row: LandingCompanyInfoRow): LandingCompanyInfo {
   return {
     companyName: row.company_name ?? undefined,
     representative: row.representative_name ?? undefined,
@@ -182,7 +182,7 @@ function mapCompanyInfoRow(row: LandingCompanyInfoRow): LandingCompanyInfo {
   };
 }
 
-function mapSeoSettingsRow(row: LandingSeoSettingsRow): LandingSeoMeta {
+export function mapSeoSettingsRow(row: LandingSeoSettingsRow): LandingSeoMeta {
   return {
     metaTitle: row.seo_title ?? undefined,
     metaDescription: row.seo_description ?? undefined,

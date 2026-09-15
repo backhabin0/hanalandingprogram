@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn, toTelHref } from "@/lib/utils";
 import type { LandingVariant } from "./SiteHeader";
 
 const VARIANT_SECTION: Record<LandingVariant, string> = {
@@ -59,7 +59,7 @@ export function LeadSection({
           <div className="mt-8 flex flex-wrap gap-3">
             {phone && (
               <a
-                href={`tel:${phone}`}
+                href={toTelHref(phone)}
                 className={cn(
                   "rounded-lg px-5 py-3 text-sm font-semibold shadow-sm transition",
                   VARIANT_CTA[variant]
@@ -72,7 +72,7 @@ export function LeadSection({
               <a
                 href={kakaoUrl}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="rounded-lg border border-white/40 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
               >
                 카카오톡 문의

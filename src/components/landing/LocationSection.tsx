@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn, toTelHref } from "@/lib/utils";
 import type { LandingVariant } from "./SiteHeader";
 import { ImagePlaceholder } from "./ImagePlaceholder";
 import { SectionHeading } from "./SectionHeading";
@@ -75,7 +75,7 @@ export function LocationSection({
                   전화 문의
                 </dt>
                 <dd className={cn("mt-1 text-base font-medium", VARIANT_VALUE[variant])}>
-                  <a href={`tel:${phone}`}>{phone}</a>
+                  <a href={toTelHref(phone)}>{phone}</a>
                 </dd>
               </div>
             )}
@@ -85,7 +85,7 @@ export function LocationSection({
                   카카오톡 문의
                 </dt>
                 <dd className={cn("mt-1 text-base font-medium", VARIANT_VALUE[variant])}>
-                  <a href={kakaoUrl} target="_blank" rel="noreferrer">
+                  <a href={kakaoUrl} target="_blank" rel="noopener noreferrer">
                     카카오톡 채널 바로가기
                   </a>
                 </dd>

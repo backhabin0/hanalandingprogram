@@ -48,6 +48,8 @@ export function FeatureGrid({
   features: LandingFeature[];
   variant: LandingVariant;
 }) {
+  if (features.length === 0) return null;
+
   return (
     <section id={id} className={cn("border-b", VARIANT_SECTION[variant])}>
       <div className="mx-auto max-w-[1360px] px-6 py-20 lg:px-10">
