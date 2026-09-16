@@ -6,14 +6,16 @@ import {
   mapCompanyInfoRow,
   mapFaqRow,
   mapFeatureRow,
+  mapGalleryImageRow,
   mapMetricRow,
   mapPageRow,
   mapProcessStepRow,
+  mapProductImageRow,
   mapProductRow,
   mapSeoSettingsRow,
   mapSpecificationRow,
 } from "@/lib/landing-pages";
-import type { LandingPage } from "@/types/landing";
+import type { LandingPage, LandingProduct } from "@/types/landing";
 
 /**
  * Public-only reads for the `/[slug]` route.
@@ -41,6 +43,8 @@ type LandingProcessStepRow = Database["public"]["Tables"]["landing_process_steps
 type LandingCompanyInfoRow = Database["public"]["Tables"]["landing_company_info"]["Row"];
 type LandingSeoSettingsRow = Database["public"]["Tables"]["landing_page_seo_settings"]["Row"];
 type LandingCaseRow = Database["public"]["Tables"]["landing_cases"]["Row"];
+type LandingProductImageRow = Database["public"]["Tables"]["landing_product_images"]["Row"];
+type LandingGalleryImageRow = Database["public"]["Tables"]["landing_gallery_images"]["Row"];
 
 /**
  * A real Supabase/PostgREST failure (network, malformed query, etc.) is
@@ -187,6 +191,38 @@ async function getPublicCases(landingPageId: string) {
   return ((data ?? []) as LandingCaseRow[]).map(mapCaseRow);
 }
 
+async function getPublicProductImages(landingPageId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("landing_product_images")
+    .select("*")
+    .eq("landing_page_id", landingPageId)
+    .eq("is_active", true)
+    .order("sort_order", CHILD_ORDER)
+    .order("created_at", CHILD_ORDER);
+
+  if (error) failLoad("landing_product_images", error);
+  const grouped: Record<string, ReturnType<typeof mapProductImageRow>[]> = {};
+  for (const row of (data ?? []) as LandingProductImageRow[]) {
+    (grouped[row.product_id] ??= []).push(mapProductImageRow(row));
+  }
+  return grouped;
+}
+
+async function getPublicGalleryImages(landingPageId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("landing_gallery_images")
+    .select("*")
+    .eq("landing_page_id", landingPageId)
+    .eq("is_active", true)
+    .order("sort_order", CHILD_ORDER)
+    .order("created_at", CHILD_ORDER);
+
+  if (error) failLoad("landing_gallery_images", error);
+  return ((data ?? []) as LandingGalleryImageRow[]).map(mapGalleryImageRow);
+}
+
 /**
  * Everything the `/[slug]` route needs for one public landing page, or
  * `null` if the slug doesn't exist / isn't public. Wrapped in React `cache`
@@ -202,7 +238,7 @@ export const getPublicLandingPageFullBySlug = cache(
 
     const page = mapPageRow(row as LandingPageRow);
 
-    const [products, features, metrics, specifications, faqs, processSteps, companyInfo, seo, cases] =
+    const [products, features, metrics, specifications, faqs, processSteps, companyInfo, seo, cases, productImagesByProductId, galleryImages] =
       await Promise.all([
         getPublicProducts(page.id),
         getPublicFeatures(page.id),
@@ -213,11 +249,18 @@ export const getPublicLandingPageFullBySlug = cache(
         getPublicCompanyInfo(page.id),
         getPublicSeoSettings(page.id),
         getPublicCases(page.id),
+        getPublicProductImages(page.id),
+        getPublicGalleryImages(page.id),
       ]);
+
+    const productsWithImages: LandingProduct[] = products.map((product) => ({
+      ...product,
+      images: productImagesByProductId[product.id] ?? [],
+    }));
 
     return {
       ...page,
-      products,
+      products: productsWithImages,
       features,
       metrics,
       specifications,
@@ -226,6 +269,7 @@ export const getPublicLandingPageFullBySlug = cache(
       companyInfo: companyInfo ?? undefined,
       seo: seo ?? undefined,
       cases,
+      galleryImages,
     };
   }
 );

@@ -8,6 +8,7 @@ import { ProcessSteps } from "../ProcessSteps";
 import { PricingSection } from "../PricingSection";
 import { SpecificationTable } from "../SpecificationTable";
 import { CaseStudiesSection } from "../CaseStudiesSection";
+import { PageGallerySection } from "../PageGallerySection";
 import { LocationSection } from "../LocationSection";
 import { FAQSection } from "../FAQSection";
 import { LeadSection } from "../LeadSection";
@@ -31,6 +32,7 @@ export function TemplateA({ page }: { page: LandingPage }) {
     <div className="bg-white">
       <SiteHeader
         businessName={page.businessName}
+        logoUrl={page.logoUrl}
         navItems={navItems}
         phone={page.phone}
         ctaLabel="무료 견적 받기"
@@ -104,6 +106,14 @@ export function TemplateA({ page }: { page: LandingPage }) {
           variant="a"
         />
 
+        <PageGallerySection
+          id="gallery"
+          eyebrow="현장 갤러리"
+          title="시공 현장 및 실적 사진"
+          images={page.galleryImages ?? []}
+          variant="a"
+        />
+
         <LocationSection
           id="location"
           title="서비스 지역 안내"
@@ -135,6 +145,7 @@ export function TemplateA({ page }: { page: LandingPage }) {
 
       <SiteFooter
         businessName={page.businessName}
+        logoUrl={page.logoUrl}
         industry={page.industry}
         phone={page.phone}
         address={page.address}

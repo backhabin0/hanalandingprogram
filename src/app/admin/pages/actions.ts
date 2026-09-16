@@ -8,6 +8,7 @@ import { validateSlug } from "@/lib/slug";
 import { isSafeHttpUrl } from "@/lib/validation";
 import { mapSupabaseError } from "@/lib/supabase-errors";
 import { getString, toNullable, parseIndexedGroups } from "@/lib/form-data";
+import { removeAssetIfUnreferenced } from "@/lib/storage/asset-refs";
 import type { Database } from "@/lib/supabase/database.types";
 import type { LandingPageStatus, LandingTemplateId } from "@/types/landing";
 
@@ -240,10 +241,52 @@ export async function updateLandingPageAction(
   return { error: null };
 }
 
+/**
+ * Every Storage-backed image URL that could belong to this page, collected
+ * BEFORE the delete so there's still something to look up. Child rows
+ * (products, cases, their images, the page gallery) all cascade-delete with
+ * the parent `landing_pages` row — nothing here reads them again after.
+ */
+async function collectPageImageUrls(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  landingPageId: string
+): Promise<string[]> {
+  const [page, products, seo, cases, productImages, galleryImages] = await Promise.all([
+    supabase.from("landing_pages").select("logo_url, main_image_url").eq("id", landingPageId).maybeSingle(),
+    supabase.from("landing_products").select("image_url").eq("landing_page_id", landingPageId),
+    supabase.from("landing_page_seo_settings").select("og_image_url").eq("landing_page_id", landingPageId).maybeSingle(),
+    supabase.from("landing_cases").select("image_url").eq("landing_page_id", landingPageId),
+    supabase.from("landing_product_images").select("image_url").eq("landing_page_id", landingPageId),
+    supabase.from("landing_gallery_images").select("image_url").eq("landing_page_id", landingPageId),
+  ]);
+
+  const urls: (string | null | undefined)[] = [
+    page.data?.logo_url,
+    page.data?.main_image_url,
+    seo.data?.og_image_url,
+    ...(products.data ?? []).map((p) => p.image_url),
+    ...(cases.data ?? []).map((c) => c.image_url),
+    ...(productImages.data ?? []).map((i) => i.image_url),
+    ...(galleryImages.data ?? []).map((i) => i.image_url),
+  ];
+
+  return urls.filter((url): url is string => Boolean(url));
+}
+
 export async function deleteLandingPageAction(id: string): Promise<void> {
   await requireUser();
 
   const supabase = await createSupabaseServerClient();
+
+  // Deliberately NOT a wholesale `storage.remove` of the whole
+  // `landing-pages/{id}/` folder — a future page-duplication feature could
+  // mean another page's row references one of these same URLs, and this
+  // codebase already got burned once (Stage 8) by an unverified assumption
+  // about Storage/RLS behavior. Each URL is checked for other references
+  // (`removeAssetIfUnreferenced`) after the page (and everything that used
+  // to reference it) is gone.
+  const imageUrls = await collectPageImageUrls(supabase, id);
+
   const { error } = await supabase.from("landing_pages").delete().eq("id", id);
 
   if (error) {
@@ -252,6 +295,8 @@ export async function deleteLandingPageAction(id: string): Promise<void> {
     console.error("[deleteLandingPageAction] failed:", error.code, error.message);
     return;
   }
+
+  await Promise.all(imageUrls.map((url) => removeAssetIfUnreferenced(supabase, url)));
 
   revalidatePath("/admin");
   revalidatePath("/admin/pages");

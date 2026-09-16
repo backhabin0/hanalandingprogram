@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { LandingCompanyInfo } from "@/types/landing";
 import type { LandingVariant } from "./SiteHeader";
@@ -26,8 +29,15 @@ const VARIANT_MARK: Record<LandingVariant, string> = {
   c: "rounded-full bg-orange-600",
 };
 
+const VARIANT_MARK_SHAPE: Record<LandingVariant, string> = {
+  a: "rounded-lg",
+  b: "rounded-lg",
+  c: "rounded-full",
+};
+
 export function SiteFooter({
   businessName,
+  logoUrl,
   industry,
   phone,
   address,
@@ -36,6 +46,7 @@ export function SiteFooter({
   variant,
 }: {
   businessName: string;
+  logoUrl?: string;
   industry?: string;
   phone?: string;
   address?: string;
@@ -45,6 +56,9 @@ export function SiteFooter({
   variant: LandingVariant;
 }) {
   const displayName = companyInfo?.companyName ?? businessName;
+  // Falls back to the letter mark — never a broken-image icon — if `logoUrl`
+  // fails to load, same pattern as ImagePlaceholder / SiteHeader.
+  const [logoFailed, setLogoFailed] = useState(false);
 
   return (
     <footer className={cn("border-t", VARIANT_FOOTER[variant])}>
@@ -52,14 +66,24 @@ export function SiteFooter({
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.2fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2.5">
-              <span
-                className={cn(
-                  "flex h-8 w-8 items-center justify-center text-sm font-bold text-white",
-                  VARIANT_MARK[variant]
-                )}
-              >
-                {displayName.slice(0, 1)}
-              </span>
+              {logoUrl && !logoFailed ? (
+                // eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-supplied/Storage URL, no fixed remotePatterns host set for this stage
+                <img
+                  src={logoUrl}
+                  alt={displayName}
+                  className={cn("h-8 w-8 shrink-0 object-cover", VARIANT_MARK_SHAPE[variant])}
+                  onError={() => setLogoFailed(true)}
+                />
+              ) : (
+                <span
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center text-sm font-bold text-white",
+                    VARIANT_MARK[variant]
+                  )}
+                >
+                  {displayName.slice(0, 1)}
+                </span>
+              )}
               <span className="text-base font-bold text-white">{displayName}</span>
             </div>
             {industry && <p className="mt-4 max-w-xs text-sm leading-relaxed">{industry}</p>}

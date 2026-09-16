@@ -4,8 +4,10 @@ import { useActionState, useState } from "react";
 import { FormField, FormSection } from "@/components/admin/FormField";
 import { Input, Textarea } from "@/components/admin/FormControls";
 import { EditorSaveBar } from "@/components/admin/EditorControls";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import type { LandingSeoMeta } from "@/types/landing";
 import { saveLandingSeoSettingsAction, type SeoSettingsFormState } from "@/app/admin/pages/[id]/edit/actions";
+import { removeOgImageAction, uploadOgImageAction } from "@/app/admin/pages/[id]/edit/image-actions";
 
 interface SeoDraft {
   seoTitle: string;
@@ -131,7 +133,17 @@ export function SeoEditor({
           </FormField>
         </div>
 
-        <FormField label="OG 이미지 URL" hint="이미지 업로드 기능은 다음 단계에서 추가됩니다. 지금은 URL만 입력할 수 있습니다.">
+        <ImageUploadField
+          label="OG 이미지"
+          hint="1200 x 630 권장 — 카카오톡/소셜/검색 공유 시 노출되는 썸네일입니다. Hero 이미지와는 목적이 다릅니다."
+          ratio="aspect-[1200/630]"
+          currentUrl={form.ogImageUrl || undefined}
+          altText="OG 공유 이미지"
+          uploadAction={(formData) => uploadOgImageAction(landingPageId, formData)}
+          removeAction={() => removeOgImageAction(landingPageId)}
+          onChange={(url) => update({ ogImageUrl: url ?? "" })}
+        />
+        <FormField label="OG 이미지 URL" hint="외부 이미지 URL을 직접 입력할 수도 있습니다.">
           <Input
             name="ogImageUrl"
             type="url"

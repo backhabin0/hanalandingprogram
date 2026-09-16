@@ -6,6 +6,7 @@ import { ProductSection } from "../ProductSection";
 import { FeatureGrid } from "../FeatureGrid";
 import { SpecificationTable } from "../SpecificationTable";
 import { CaseStudiesSection } from "../CaseStudiesSection";
+import { PageGallerySection } from "../PageGallerySection";
 import { LocationSection } from "../LocationSection";
 import { PricingSection } from "../PricingSection";
 import { FAQSection } from "../FAQSection";
@@ -33,6 +34,7 @@ export function TemplateB({ page }: { page: LandingPage }) {
     <div className="bg-slate-950">
       <SiteHeader
         businessName={page.businessName}
+        logoUrl={page.logoUrl}
         navItems={navItems}
         phone={page.phone}
         ctaLabel="지금 구매하기"
@@ -114,6 +116,14 @@ export function TemplateB({ page }: { page: LandingPage }) {
           variant="b"
         />
 
+        <PageGallerySection
+          id="gallery"
+          eyebrow="제품 갤러리"
+          title="다양한 각도로 살펴보세요"
+          images={page.galleryImages ?? []}
+          variant="b"
+        />
+
         <LocationSection
           id="location"
           title="서비스 지역 안내"
@@ -145,6 +155,7 @@ export function TemplateB({ page }: { page: LandingPage }) {
 
       <SiteFooter
         businessName={page.businessName}
+        logoUrl={page.logoUrl}
         industry={page.industry}
         phone={page.phone}
         address={page.address}

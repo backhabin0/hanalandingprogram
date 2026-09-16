@@ -7,6 +7,7 @@ import { PricingSection } from "../PricingSection";
 import { ProcessSteps } from "../ProcessSteps";
 import { LocationSection } from "../LocationSection";
 import { CaseStudiesSection } from "../CaseStudiesSection";
+import { PageGallerySection } from "../PageGallerySection";
 import { TrustMetrics } from "../TrustMetrics";
 import { FAQSection } from "../FAQSection";
 import { LeadSection } from "../LeadSection";
@@ -37,6 +38,7 @@ export function TemplateC({ page }: { page: LandingPage }) {
     <div className="bg-white">
       <SiteHeader
         businessName={page.businessName}
+        logoUrl={page.logoUrl}
         navItems={navItems}
         phone={page.phone}
         ctaLabel="상담 예약하기"
@@ -113,6 +115,14 @@ export function TemplateC({ page }: { page: LandingPage }) {
           variant="c"
         />
 
+        <PageGallerySection
+          id="gallery"
+          eyebrow="매장/시설 갤러리"
+          title="공간을 미리 살펴보세요"
+          images={page.galleryImages ?? []}
+          variant="c"
+        />
+
         <TrustMetrics
           id="metrics"
           eyebrow="누적 실적"
@@ -141,6 +151,7 @@ export function TemplateC({ page }: { page: LandingPage }) {
 
       <SiteFooter
         businessName={page.businessName}
+        logoUrl={page.logoUrl}
         industry={page.industry}
         phone={page.phone}
         address={page.address}

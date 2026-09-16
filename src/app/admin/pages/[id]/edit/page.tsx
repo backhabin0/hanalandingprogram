@@ -13,6 +13,7 @@ import { CompanyInfoEditor } from "@/components/admin/CompanyInfoEditor";
 import { CasesEditor } from "@/components/admin/CasesEditor";
 import { SeoEditor } from "@/components/admin/SeoEditor";
 import { SeoScoreCard } from "@/components/admin/SeoScoreCard";
+import { PageGalleryEditor } from "@/components/admin/PageGalleryEditor";
 import { getTemplateMeta } from "@/lib/mock-data";
 import {
   getLandingCases,
@@ -21,15 +22,17 @@ import {
   getLandingFeatures,
   getLandingMetrics,
   getLandingPageById,
+  getLandingPageGalleryImages,
   getLandingPageSeoSettings,
   getLandingProcessSteps,
+  getLandingProductImages,
   getLandingProducts,
   getLandingSpecifications,
 } from "@/lib/landing-pages";
 import { resolveLandingPageSeo } from "@/lib/seo/resolve";
 import { computeSeoScore } from "@/lib/seo/score";
 import { findDuplicateSeoWarnings } from "@/lib/seo/duplicates";
-import type { LandingPage } from "@/types/landing";
+import type { LandingPage, LandingProduct } from "@/types/landing";
 import { updateLandingPageAction } from "../../actions";
 
 export default async function EditLandingPagePage({ params }: { params: Promise<{ id: string }> }) {
@@ -38,18 +41,36 @@ export default async function EditLandingPagePage({ params }: { params: Promise<
   const page = await getLandingPageById(id);
   if (!page) notFound();
 
-  const [products, features, metrics, specifications, faqs, processSteps, companyInfo, seo, cases] =
-    await Promise.all([
-      getLandingProducts(id),
-      getLandingFeatures(id),
-      getLandingMetrics(id),
-      getLandingSpecifications(id),
-      getLandingFaqs(id),
-      getLandingProcessSteps(id),
-      getLandingCompanyInfo(id),
-      getLandingPageSeoSettings(id),
-      getLandingCases(id),
-    ]);
+  const [
+    rawProducts,
+    features,
+    metrics,
+    specifications,
+    faqs,
+    processSteps,
+    companyInfo,
+    seo,
+    cases,
+    productImagesByProductId,
+    galleryImages,
+  ] = await Promise.all([
+    getLandingProducts(id),
+    getLandingFeatures(id),
+    getLandingMetrics(id),
+    getLandingSpecifications(id),
+    getLandingFaqs(id),
+    getLandingProcessSteps(id),
+    getLandingCompanyInfo(id),
+    getLandingPageSeoSettings(id),
+    getLandingCases(id),
+    getLandingProductImages(id),
+    getLandingPageGalleryImages(id),
+  ]);
+
+  const products: LandingProduct[] = rawProducts.map((product) => ({
+    ...product,
+    images: productImagesByProductId[product.id] ?? [],
+  }));
 
   const boundUpdate = updateLandingPageAction.bind(null, id);
   const template = getTemplateMeta(page.template);
@@ -65,6 +86,7 @@ export default async function EditLandingPagePage({ params }: { params: Promise<
     faqs,
     processSteps,
     cases,
+    galleryImages,
     companyInfo: companyInfo ?? undefined,
     seo: seo ?? undefined,
   };
@@ -112,6 +134,7 @@ export default async function EditLandingPagePage({ params }: { params: Promise<
         <LandingPageForm
           mode="edit"
           action={boundUpdate}
+          landingPageId={id}
           initialValues={{
             businessName: page.businessName,
             title: page.title,
@@ -127,6 +150,8 @@ export default async function EditLandingPagePage({ params }: { params: Promise<
             representativePrice: page.representativePrice,
             template: page.template,
             status: page.status,
+            logoUrl: page.logoUrl,
+            mainImageUrl: page.mainImageUrl,
           }}
         />
 
@@ -148,6 +173,7 @@ export default async function EditLandingPagePage({ params }: { params: Promise<
           products={products.map((p) => ({ id: p.id, name: p.name }))}
         />
         <CompanyInfoEditor landingPageId={id} initialCompanyInfo={companyInfo ?? undefined} />
+        <PageGalleryEditor landingPageId={id} initialImages={galleryImages} fallbackAlt={page.businessName} />
         <SeoEditor
           landingPageId={id}
           initialSeo={seo ?? undefined}

@@ -197,6 +197,37 @@ type LandingCaseInsert = Pick<LandingCaseRow, "landing_page_id" | "title"> &
   Partial<Omit<LandingCaseRow, "landing_page_id" | "title">>;
 type LandingCaseUpdate = Partial<LandingCaseRow>;
 
+type LandingProductImageRow = {
+  id: string;
+  landing_page_id: string;
+  product_id: string;
+  image_url: string;
+  alt_text: string | null;
+  caption: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+type LandingProductImageInsert = Pick<LandingProductImageRow, "landing_page_id" | "product_id" | "image_url"> &
+  Partial<Omit<LandingProductImageRow, "landing_page_id" | "product_id" | "image_url">>;
+type LandingProductImageUpdate = Partial<LandingProductImageRow>;
+
+type LandingGalleryImageRow = {
+  id: string;
+  landing_page_id: string;
+  image_url: string;
+  alt_text: string | null;
+  caption: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+type LandingGalleryImageInsert = Pick<LandingGalleryImageRow, "landing_page_id" | "image_url"> &
+  Partial<Omit<LandingGalleryImageRow, "landing_page_id" | "image_url">>;
+type LandingGalleryImageUpdate = Partial<LandingGalleryImageRow>;
+
 export type Database = {
   // Without this marker, @supabase/supabase-js's SupabaseClient generic
   // silently resolves `.insert()`/`.update()` payload types to `never`
@@ -272,6 +303,18 @@ export type Database = {
         Row: LandingCaseRow;
         Insert: LandingCaseInsert;
         Update: LandingCaseUpdate;
+        Relationships: [];
+      };
+      landing_product_images: {
+        Row: LandingProductImageRow;
+        Insert: LandingProductImageInsert;
+        Update: LandingProductImageUpdate;
+        Relationships: [];
+      };
+      landing_gallery_images: {
+        Row: LandingGalleryImageRow;
+        Insert: LandingGalleryImageInsert;
+        Update: LandingGalleryImageUpdate;
         Relationships: [];
       };
     };

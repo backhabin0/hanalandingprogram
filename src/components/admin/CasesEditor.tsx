@@ -4,8 +4,10 @@ import { useActionState, useState } from "react";
 import { FormField, FormSection } from "@/components/admin/FormField";
 import { Input, Select, Textarea } from "@/components/admin/FormControls";
 import { ActiveToggle, EditorSaveBar, ReorderControls } from "@/components/admin/EditorControls";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import type { LandingCase } from "@/types/landing";
 import { saveLandingCasesAction, type CasesFormState } from "@/app/admin/pages/[id]/edit/actions";
+import { removeCaseImageAction, uploadCaseImageAction } from "@/app/admin/pages/[id]/edit/image-actions";
 
 function newKey(): string {
   return typeof crypto !== "undefined" ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
@@ -188,15 +190,30 @@ export function CasesEditor({
                 />
               </FormField>
 
-              <FormField label="이미지 URL" hint="선택 사항 — 이미지 업로드 기능은 다음 단계에서 추가됩니다.">
-                <Input
-                  name={`cases[${index}].imageUrl`}
-                  type="url"
-                  placeholder="https://example.com/case.jpg"
-                  value={item.imageUrl}
-                  onChange={(e) => updateItem(index, { imageUrl: e.target.value })}
+              {item.id ? (
+                <ImageUploadField
+                  label="사례 이미지"
+                  ratio="aspect-[4/3]"
+                  currentUrl={item.imageUrl}
+                  altText={item.title || "설치 사례 이미지"}
+                  uploadAction={(formData) => uploadCaseImageAction(landingPageId, item.id!, formData)}
+                  removeAction={() => removeCaseImageAction(landingPageId, item.id!)}
+                  onChange={(url) => updateItem(index, { imageUrl: url ?? "" })}
                 />
-              </FormField>
+              ) : (
+                <FormField label="이미지 URL" hint="선택 사항 — 먼저 저장한 뒤 이미지를 업로드할 수 있습니다. 외부 URL도 직접 입력할 수 있습니다.">
+                  <Input
+                    name={`cases[${index}].imageUrl`}
+                    type="url"
+                    placeholder="https://example.com/case.jpg"
+                    value={item.imageUrl}
+                    onChange={(e) => updateItem(index, { imageUrl: e.target.value })}
+                  />
+                </FormField>
+              )}
+              {item.id && (
+                <input type="hidden" name={`cases[${index}].imageUrl`} value={item.imageUrl} />
+              )}
             </div>
           ))}
         </div>

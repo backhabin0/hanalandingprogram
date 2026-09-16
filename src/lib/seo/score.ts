@@ -196,6 +196,19 @@ export function computeSeoScore(page: LandingPage, seo: LandingSeoMeta | undefin
       : heroLength >= RICH_HERO_LENGTH || descriptionLength >= RICH_DESCRIPTION_LENGTH
         ? 3
         : 0;
+  // Low weight on purpose — a completeness nudge, not a reward for merely
+  // uploading a file. Real content (description/price/FAQ/etc. above) still
+  // dominates the score.
+  const hasRepresentativeImage = Boolean(page.mainImageUrl) || activeProducts.some((p) => p.image);
+  const hasOgImage = Boolean(seo?.ogImageUrl || page.mainImageUrl || page.logoUrl);
+  items.push({
+    key: "images",
+    label: "대표/OG 이미지 존재",
+    points: hasRepresentativeImage && hasOgImage ? 3 : hasRepresentativeImage || hasOgImage ? 1 : 0,
+    maxPoints: 3,
+    suggestion: "Hero(대표) 이미지와 OG 공유 이미지를 등록해보세요.",
+  });
+
   items.push({
     key: "uniqueContent",
     label: "고유 콘텐츠 품질",

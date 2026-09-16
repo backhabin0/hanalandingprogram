@@ -33,6 +33,26 @@ export interface LandingPriceSummary {
 /** Which schema.org type a product-table row should be announced as. */
 export type LandingItemType = "product" | "service";
 
+/** One extra photo attached to a product, beyond its single representative `image`. */
+export interface LandingProductImage {
+  id: string;
+  imageUrl: string;
+  altText?: string;
+  caption?: string;
+  sortOrder: number;
+  isActive?: boolean;
+}
+
+/** One photo in a landing page's whole-site gallery (install photos, office, portfolio, ...). */
+export interface LandingGalleryImage {
+  id: string;
+  imageUrl: string;
+  altText?: string;
+  caption?: string;
+  sortOrder: number;
+  isActive?: boolean;
+}
+
 /** One product or service line item inside a landing page. */
 export interface LandingProduct {
   id: string;
@@ -52,6 +72,8 @@ export interface LandingProduct {
   isActive?: boolean;
   /** Drives Product vs Service JSON-LD. Undefined (pre-Stage-8 rows) is treated as "product". */
   itemType?: LandingItemType;
+  /** Extra gallery photos beyond `image`. Undefined on pre-Stage-9 callers (mock/preview data) — treat as none. */
+  images?: LandingProductImage[];
 }
 
 /** A single differentiator / feature card. */
@@ -195,6 +217,8 @@ export interface LandingPage {
   processSteps: LandingProcessStep[];
   /** Undefined on pre-Stage-8 callers (e.g. mock/preview data) — treat as no cases. */
   cases?: LandingCase[];
+  /** Undefined on pre-Stage-9 callers (e.g. mock/preview data) — treat as no gallery. */
+  galleryImages?: LandingGalleryImage[];
 
   /** Short trust labels, e.g. "정보보호 인증", "10년 연속 무사고 시공". */
   trustBadges?: string[];

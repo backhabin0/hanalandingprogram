@@ -4,8 +4,17 @@ import { useActionState, useState } from "react";
 import { FormField, FormSection } from "@/components/admin/FormField";
 import { Input, Select, Textarea } from "@/components/admin/FormControls";
 import { ActiveToggle, EditorSaveBar, ReorderControls } from "@/components/admin/EditorControls";
-import type { LandingItemType, LandingProduct } from "@/types/landing";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { GalleryEditor } from "@/components/admin/GalleryEditor";
+import type { LandingItemType, LandingProduct, LandingProductImage } from "@/types/landing";
 import { saveLandingProductsAction, type ProductsFormState } from "@/app/admin/pages/[id]/edit/actions";
+import {
+  addProductGalleryImageAction,
+  deleteProductGalleryImageAction,
+  removeProductImageAction,
+  saveProductGalleryImagesAction,
+  uploadProductImageAction,
+} from "@/app/admin/pages/[id]/edit/image-actions";
 
 function newKey(): string {
   return typeof crypto !== "undefined" ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
@@ -24,6 +33,8 @@ interface ProductDraft {
   ctaText: string;
   isActive: boolean;
   itemType: LandingItemType;
+  image?: string;
+  images: LandingProductImage[];
 }
 
 function toDraft(product: LandingProduct): ProductDraft {
@@ -40,6 +51,8 @@ function toDraft(product: LandingProduct): ProductDraft {
     ctaText: product.ctaText ?? "",
     isActive: product.isActive ?? true,
     itemType: product.itemType ?? "product",
+    image: product.image,
+    images: product.images ?? [],
   };
 }
 
@@ -56,6 +69,7 @@ function emptyDraft(): ProductDraft {
     ctaText: "",
     isActive: true,
     itemType: "product",
+    images: [],
   };
 }
 
@@ -153,6 +167,34 @@ export function ProductsEditor({
                   )}
                 </div>
               </div>
+
+              {item.id ? (
+                <div className="mb-4 space-y-4 rounded-lg bg-slate-50 p-3">
+                  <ImageUploadField
+                    label="대표 이미지"
+                    hint="최소 1000px 권장"
+                    ratio="aspect-[4/3]"
+                    currentUrl={item.image}
+                    altText={item.name ? `${item.name} 이미지` : "제품 이미지"}
+                    uploadAction={(formData) => uploadProductImageAction(landingPageId, item.id!, formData)}
+                    removeAction={() => removeProductImageAction(landingPageId, item.id!)}
+                    onChange={(url) => updateItem(index, { image: url ?? undefined })}
+                  />
+                  <div>
+                    <p className="mb-1.5 text-sm font-medium text-slate-700">추가 갤러리 이미지</p>
+                    <GalleryEditor
+                      images={item.images}
+                      fallbackAlt={item.name || "제품 이미지"}
+                      addAction={(formData) => addProductGalleryImageAction(landingPageId, item.id!, formData)}
+                      saveAction={(images) => saveProductGalleryImagesAction(landingPageId, item.id!, images)}
+                      deleteAction={(imageId) => deleteProductGalleryImageAction(landingPageId, item.id!, imageId)}
+                      onImagesChange={(images) => updateItem(index, { images })}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="mb-4 text-xs text-slate-400">먼저 저장한 뒤 이미지를 추가할 수 있습니다.</p>
+              )}
 
               <FormField
                 label="유형"

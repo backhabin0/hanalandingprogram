@@ -5,6 +5,7 @@ import type {
   LandingCompanyInfo,
   LandingFaq,
   LandingFeature,
+  LandingGalleryImage,
   LandingMetric,
   LandingPage,
   LandingPageRecord,
@@ -13,6 +14,7 @@ import type {
   LandingPriceSummary,
   LandingProcessStep,
   LandingProduct,
+  LandingProductImage,
   LandingSeoMeta,
   LandingSpecification,
   LandingTemplateId,
@@ -42,6 +44,8 @@ type LandingFaqRow = Database["public"]["Tables"]["landing_faqs"]["Row"];
 type LandingProcessStepRow = Database["public"]["Tables"]["landing_process_steps"]["Row"];
 type LandingCompanyInfoRow = Database["public"]["Tables"]["landing_company_info"]["Row"];
 type LandingCaseRow = Database["public"]["Tables"]["landing_cases"]["Row"];
+type LandingProductImageRow = Database["public"]["Tables"]["landing_product_images"]["Row"];
+type LandingGalleryImageRow = Database["public"]["Tables"]["landing_gallery_images"]["Row"];
 type LandingSeoSettingsRow = Database["public"]["Tables"]["landing_page_seo_settings"]["Row"];
 
 const CHILD_ORDER = { ascending: true } as const;
@@ -218,6 +222,28 @@ export function mapCaseRow(row: LandingCaseRow): LandingCase {
   };
 }
 
+export function mapProductImageRow(row: LandingProductImageRow): LandingProductImage {
+  return {
+    id: row.id,
+    imageUrl: row.image_url,
+    altText: row.alt_text ?? undefined,
+    caption: row.caption ?? undefined,
+    sortOrder: row.sort_order,
+    isActive: row.is_active,
+  };
+}
+
+export function mapGalleryImageRow(row: LandingGalleryImageRow): LandingGalleryImage {
+  return {
+    id: row.id,
+    imageUrl: row.image_url,
+    altText: row.alt_text ?? undefined,
+    caption: row.caption ?? undefined,
+    sortOrder: row.sort_order,
+    isActive: row.is_active,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Base landing_pages reads
 // ---------------------------------------------------------------------------
@@ -379,6 +405,37 @@ export async function getLandingCases(landingPageId: string): Promise<LandingCas
 
   if (error) throw error;
   return (data ?? []).map(mapCaseRow);
+}
+
+/** All product images for every product on the page, grouped by product id. */
+export async function getLandingProductImages(landingPageId: string): Promise<Record<string, LandingProductImage[]>> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("landing_product_images")
+    .select("*")
+    .eq("landing_page_id", landingPageId)
+    .order("sort_order", CHILD_ORDER)
+    .order("created_at", CHILD_ORDER);
+
+  if (error) throw error;
+  const grouped: Record<string, LandingProductImage[]> = {};
+  for (const row of data ?? []) {
+    (grouped[row.product_id] ??= []).push(mapProductImageRow(row));
+  }
+  return grouped;
+}
+
+export async function getLandingPageGalleryImages(landingPageId: string): Promise<LandingGalleryImage[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("landing_gallery_images")
+    .select("*")
+    .eq("landing_page_id", landingPageId)
+    .order("sort_order", CHILD_ORDER)
+    .order("created_at", CHILD_ORDER);
+
+  if (error) throw error;
+  return (data ?? []).map(mapGalleryImageRow);
 }
 
 // ---------------------------------------------------------------------------

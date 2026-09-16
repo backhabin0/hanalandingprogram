@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { cn, toTelHref } from "@/lib/utils";
 
 export type LandingVariant = "a" | "b" | "c";
@@ -38,8 +41,15 @@ const VARIANT_NAV_ITEM: Record<LandingVariant, string> = {
   c: "rounded-full px-3 py-1.5 opacity-80 transition hover:bg-orange-50 hover:opacity-100 hover:text-orange-700",
 };
 
+const VARIANT_MARK_SHAPE: Record<LandingVariant, string> = {
+  a: "rounded-lg",
+  b: "rounded-lg",
+  c: "rounded-full",
+};
+
 export function SiteHeader({
   businessName,
+  logoUrl,
   navItems,
   phone,
   ctaLabel = "상담 신청",
@@ -47,25 +57,41 @@ export function SiteHeader({
   variant,
 }: {
   businessName: string;
+  logoUrl?: string;
   navItems: { label: string; href: string }[];
   phone?: string;
   ctaLabel?: string;
   ctaHref?: string;
   variant: LandingVariant;
 }) {
+  // Falls back to the letter mark — never a broken-image icon — if `logoUrl`
+  // fails to load (a deleted Storage object, a stale URL, ...), same pattern
+  // as ImagePlaceholder.
+  const [logoFailed, setLogoFailed] = useState(false);
+
   return (
     <header className={cn("sticky top-0 z-40 border-b backdrop-blur", VARIANT_HEADER[variant])}>
       <div className={cn("h-[3px] w-full", VARIANT_ACCENT_BAR[variant])} aria-hidden />
       <div className="mx-auto flex h-[76px] max-w-[1360px] items-center justify-between px-6 lg:px-10">
         <a href="#top" className="flex items-center gap-2.5">
-          <span
-            className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center text-sm font-bold text-white",
-              VARIANT_MARK[variant]
-            )}
-          >
-            {businessName.slice(0, 1)}
-          </span>
+          {logoUrl && !logoFailed ? (
+            // eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-supplied/Storage URL, no fixed remotePatterns host set for this stage
+            <img
+              src={logoUrl}
+              alt={businessName}
+              className={cn("h-9 w-9 shrink-0 object-cover", VARIANT_MARK_SHAPE[variant])}
+              onError={() => setLogoFailed(true)}
+            />
+          ) : (
+            <span
+              className={cn(
+                "flex h-9 w-9 shrink-0 items-center justify-center text-sm font-bold text-white",
+                VARIANT_MARK[variant]
+              )}
+            >
+              {businessName.slice(0, 1)}
+            </span>
+          )}
           <span className={VARIANT_NAME[variant]}>{businessName}</span>
         </a>
 

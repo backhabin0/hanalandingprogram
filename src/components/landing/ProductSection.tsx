@@ -93,6 +93,21 @@ export function ProductSection({
                     ratio="aspect-[4/3]"
                     tone={VARIANT_IMAGE_TONE[variant]}
                   />
+                  {product.images && product.images.filter((img) => img.isActive !== false).length > 0 && (
+                    <div className="mt-3 grid grid-cols-4 gap-2">
+                      {product.images
+                        .filter((img) => img.isActive !== false)
+                        .map((img) => (
+                          <ImagePlaceholder
+                            key={img.id}
+                            label={img.altText || `${product.name} 이미지`}
+                            src={img.imageUrl}
+                            ratio="aspect-square"
+                            tone={VARIANT_IMAGE_TONE[variant]}
+                          />
+                        ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className={reversed ? "lg:order-1" : undefined}>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FormField, FormSection } from "@/components/admin/FormField";
 import { Input, Select, Textarea } from "@/components/admin/FormControls";
 import { MiniTemplatePreview } from "@/components/admin/MiniTemplatePreview";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { cn } from "@/lib/utils";
 import { templates } from "@/lib/mock-data";
 import type {
@@ -15,6 +16,12 @@ import type {
   LandingTemplateId,
 } from "@/types/landing";
 import type { LandingPageFormState } from "@/app/admin/pages/actions";
+import {
+  removeLandingHeroAction,
+  removeLandingLogoAction,
+  uploadLandingHeroAction,
+  uploadLandingLogoAction,
+} from "@/app/admin/pages/[id]/edit/image-actions";
 
 function newKey(): string {
   return typeof crypto !== "undefined" ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
@@ -83,6 +90,8 @@ export interface LandingPageFormInitialValues {
   status?: LandingPageStatus;
   products?: LandingProduct[];
   features?: LandingFeature[];
+  logoUrl?: string;
+  mainImageUrl?: string;
 }
 
 const initialFormState: LandingPageFormState = { error: null };
@@ -93,15 +102,21 @@ const initialFormState: LandingPageFormState = { error: null };
  * edit page passes `updateLandingPageAction.bind(null, id)` so this
  * component never needs to know the difference beyond `mode` and
  * `initialValues`.
+ *
+ * `landingPageId` is only available in edit mode — logo/hero image upload
+ * needs a real page id to build a Storage path from, so a brand-new page
+ * (no id yet) shows a "save first" hint instead (see Stage 9 report).
  */
 export function LandingPageForm({
   mode,
   action,
   initialValues,
+  landingPageId,
 }: {
   mode: "create" | "edit";
   action: (state: LandingPageFormState, formData: FormData) => Promise<LandingPageFormState>;
   initialValues?: LandingPageFormInitialValues;
+  landingPageId?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, initialFormState);
 
@@ -387,15 +402,36 @@ export function LandingPageForm({
       </FormSection>
       )}
 
-      <FormSection title="이미지" description="Hero 및 제품 이미지를 등록합니다.">
-        <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-          <div>
-            <p className="text-sm font-medium text-slate-500">이미지 업로드</p>
-            <p className="mt-1 text-xs text-slate-400">
-              Storage 연동 전 단계입니다. 8단계에서 Supabase Storage와 연결될 예정입니다.
-            </p>
+      <FormSection title="이미지" description="로고와 Hero(메인) 이미지를 등록합니다. 제품/사례별 이미지는 각 항목의 편집 영역에서 관리합니다.">
+        {landingPageId ? (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <ImageUploadField
+              label="로고"
+              hint="투명 배경 PNG/WebP 권장"
+              ratio="aspect-square"
+              currentUrl={initialValues?.logoUrl}
+              altText="로고"
+              uploadAction={(formData) => uploadLandingLogoAction(landingPageId, formData)}
+              removeAction={() => removeLandingLogoAction(landingPageId)}
+            />
+            <ImageUploadField
+              label="Hero / 메인 이미지"
+              hint="1600 x 900 이상 권장"
+              ratio="aspect-[16/9]"
+              currentUrl={initialValues?.mainImageUrl}
+              altText="Hero 이미지"
+              uploadAction={(formData) => uploadLandingHeroAction(landingPageId, formData)}
+              removeAction={() => removeLandingHeroAction(landingPageId)}
+            />
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+            <div>
+              <p className="text-sm font-medium text-slate-500">이미지 업로드</p>
+              <p className="mt-1 text-xs text-slate-400">페이지를 먼저 생성한 뒤, 편집 화면에서 이미지를 추가할 수 있습니다.</p>
+            </div>
+          </div>
+        )}
       </FormSection>
     </form>
 
