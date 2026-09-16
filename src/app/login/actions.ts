@@ -33,25 +33,11 @@ export async function loginAction(
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    // TEMPORARY (Vercel login-failure diagnosis) — logs only Supabase's own
-    // safe error fields (status/code/message), never the password or API
-    // key. Remove once the "works locally, fails on Vercel" issue is
-    // root-caused.
-    console.error("[loginAction] signInWithPassword failed:", {
-      status: error.status,
-      code: error.code,
-      message: error.message,
-    });
     return { error: INVALID_CREDENTIALS_MESSAGE };
   }
-
-  // TEMPORARY (Vercel login-failure diagnosis) — confirms signIn actually
-  // succeeded and a session was returned, before whatever happens next
-  // (cookie write, redirect) — never logs the user's email/password/token.
-  console.log("[loginAction] signInWithPassword OK, user id present:", Boolean(data.user?.id));
 
   redirect("/admin");
 }
