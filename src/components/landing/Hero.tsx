@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { ImagePlaceholder } from "./ImagePlaceholder";
 import type { LandingVariant } from "./SiteHeader";
+import { TrackedLink } from "@/components/analytics/TrackedLink";
 
 const VARIANT_SECTION: Record<LandingVariant, string> = {
   a: "bg-gradient-to-b from-blue-50 via-white to-white text-slate-900",
@@ -71,6 +72,7 @@ export function Hero({
   secondaryCta,
   imageLabel,
   imageUrl,
+  slug,
   variant,
   imagePosition = "right",
   priceBadge,
@@ -84,6 +86,7 @@ export function Hero({
   secondaryCta?: { label: string; href: string };
   imageLabel: string;
   imageUrl?: string;
+  slug: string;
   variant: LandingVariant;
   /** Which side the visual sits on — Template B flips this to lead with product imagery. */
   imagePosition?: "left" | "right";
@@ -120,7 +123,9 @@ export function Hero({
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
-            <a
+            <TrackedLink
+              slug={slug}
+              eventType="quote_cta_click"
               href={primaryCta.href}
               className={cn(
                 "rounded-lg px-6 py-3.5 text-base font-semibold shadow-sm transition",
@@ -128,7 +133,7 @@ export function Hero({
               )}
             >
               {primaryCta.label}
-            </a>
+            </TrackedLink>
             {secondaryCta && (
               <a
                 href={secondaryCta.href}

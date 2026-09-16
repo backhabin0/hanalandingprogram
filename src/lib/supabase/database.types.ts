@@ -249,6 +249,17 @@ type ConsultationRequestInsert = Pick<ConsultationRequestRow, "name" | "phone" |
   Partial<Omit<ConsultationRequestRow, "name" | "phone" | "privacy_consent">>;
 type ConsultationRequestUpdate = Partial<ConsultationRequestRow>;
 
+type LandingPageEventRow = {
+  id: string;
+  landing_page_id: string | null;
+  product_id: string | null;
+  event_type: string;
+  created_at: string;
+};
+type LandingPageEventInsert = Pick<LandingPageEventRow, "event_type"> &
+  Partial<Omit<LandingPageEventRow, "event_type">>;
+type LandingPageEventUpdate = Partial<LandingPageEventRow>;
+
 export type Database = {
   // Without this marker, @supabase/supabase-js's SupabaseClient generic
   // silently resolves `.insert()`/`.update()` payload types to `never`
@@ -342,6 +353,12 @@ export type Database = {
         Row: ConsultationRequestRow;
         Insert: ConsultationRequestInsert;
         Update: ConsultationRequestUpdate;
+        Relationships: [];
+      };
+      landing_page_events: {
+        Row: LandingPageEventRow;
+        Insert: LandingPageEventInsert;
+        Update: LandingPageEventUpdate;
         Relationships: [];
       };
     };

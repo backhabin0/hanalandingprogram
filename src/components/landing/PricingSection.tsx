@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import type { LandingPriceSummary, LandingProduct } from "@/types/landing";
 import type { LandingVariant } from "./SiteHeader";
 import { SectionHeading } from "./SectionHeading";
+import { TrackedLink } from "@/components/analytics/TrackedLink";
 
 const VARIANT_SECTION: Record<LandingVariant, string> = {
   a: "bg-slate-50 border-slate-100",
@@ -53,6 +54,7 @@ export function PricingSection({
   mode,
   summary,
   products,
+  slug,
   variant,
 }: {
   id?: string;
@@ -62,6 +64,7 @@ export function PricingSection({
   mode: "summary" | "tiers";
   summary?: LandingPriceSummary;
   products?: LandingProduct[];
+  slug: string;
   variant: LandingVariant;
 }) {
   if (mode === "summary" && !summary) return null;
@@ -103,7 +106,9 @@ export function PricingSection({
                 {summary.description}
               </p>
             )}
-            <a
+            <TrackedLink
+              slug={slug}
+              eventType="quote_cta_click"
               href="#lead"
               className={cn(
                 "mt-8 inline-block rounded-lg px-6 py-3.5 text-sm font-semibold shadow-sm transition",
@@ -111,7 +116,7 @@ export function PricingSection({
               )}
             >
               정확한 견적 상담받기
-            </a>
+            </TrackedLink>
           </div>
         )}
 
@@ -135,7 +140,10 @@ export function PricingSection({
                 {product.priceNote && (
                   <p className={cn("mt-1 text-xs", VARIANT_BODY[variant])}>{product.priceNote}</p>
                 )}
-                <a
+                <TrackedLink
+                  slug={slug}
+                  eventType="product_cta_click"
+                  productId={product.id}
                   href="#lead"
                   className={cn(
                     "mt-6 inline-block rounded-lg px-4 py-2.5 text-center text-sm font-semibold shadow-sm transition",
@@ -143,7 +151,7 @@ export function PricingSection({
                   )}
                 >
                   {product.ctaText ?? "문의하기"}
-                </a>
+                </TrackedLink>
               </div>
             ))}
           </div>

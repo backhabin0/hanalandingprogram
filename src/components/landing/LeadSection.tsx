@@ -2,6 +2,7 @@ import { cn, toTelHref } from "@/lib/utils";
 import type { LandingVariant } from "./SiteHeader";
 import type { InquiryType, LandingProduct } from "@/types/landing";
 import { ConsultationForm } from "./ConsultationForm";
+import { TrackedLink } from "@/components/analytics/TrackedLink";
 
 const VARIANT_SECTION: Record<LandingVariant, string> = {
   a: "bg-blue-700",
@@ -64,7 +65,9 @@ export function LeadSection({
 
           <div className="mt-8 flex flex-wrap gap-3">
             {phone && (
-              <a
+              <TrackedLink
+                slug={slug}
+                eventType="phone_click"
                 href={toTelHref(phone)}
                 className={cn(
                   "rounded-lg px-5 py-3 text-sm font-semibold shadow-sm transition",
@@ -72,17 +75,19 @@ export function LeadSection({
                 )}
               >
                 전화 문의 {phone}
-              </a>
+              </TrackedLink>
             )}
             {kakaoUrl && (
-              <a
+              <TrackedLink
+                slug={slug}
+                eventType="kakao_click"
                 href={kakaoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-lg border border-white/40 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
               >
                 카카오톡 문의
-              </a>
+              </TrackedLink>
             )}
           </div>
         </div>

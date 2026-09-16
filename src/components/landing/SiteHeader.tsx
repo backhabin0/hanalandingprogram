@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn, toTelHref } from "@/lib/utils";
+import { TrackedLink } from "@/components/analytics/TrackedLink";
 
 export type LandingVariant = "a" | "b" | "c";
 
@@ -54,6 +55,7 @@ export function SiteHeader({
   phone,
   ctaLabel = "상담 신청",
   ctaHref = "#lead",
+  slug,
   variant,
 }: {
   businessName: string;
@@ -62,6 +64,7 @@ export function SiteHeader({
   phone?: string;
   ctaLabel?: string;
   ctaHref?: string;
+  slug: string;
   variant: LandingVariant;
 }) {
   // Falls back to the letter mark — never a broken-image icon — if `logoUrl`
@@ -105,16 +108,23 @@ export function SiteHeader({
 
         <div className="flex items-center gap-4">
           {phone && (
-            <a href={toTelHref(phone)} className="hidden text-sm font-semibold sm:inline-block">
+            <TrackedLink
+              slug={slug}
+              eventType="phone_click"
+              href={toTelHref(phone)}
+              className="hidden text-sm font-semibold sm:inline-block"
+            >
               {phone}
-            </a>
+            </TrackedLink>
           )}
-          <a
+          <TrackedLink
+            slug={slug}
+            eventType="quote_cta_click"
             href={ctaHref}
             className={cn("px-4 py-2.5 text-sm font-semibold shadow-sm transition", VARIANT_CTA[variant])}
           >
             {ctaLabel}
-          </a>
+          </TrackedLink>
         </div>
       </div>
     </header>

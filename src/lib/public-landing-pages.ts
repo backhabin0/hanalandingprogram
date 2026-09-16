@@ -275,16 +275,17 @@ export const getPublicLandingPageFullBySlug = cache(
 );
 
 /**
- * The minimal lookup `createConsultationRequestAction` needs: confirms the
- * slug is a real, currently-public page, lists which product ids are valid
- * to attach a consultation to (active products of that page only), and
- * carries `businessName` + each product's `name`/`itemType` so the Stage 11
+ * The minimal lookup both `createConsultationRequestAction` (Stage 11) and
+ * `POST /api/analytics` (Stage 12) need: confirms the slug is a real,
+ * currently-public page, lists which product ids are valid to attach a
+ * consultation/event to (active products of that page only), and carries
+ * `businessName` + each product's `name`/`itemType` so the Stage 11
  * notification email can be built without a second, anon-SELECT-requiring
  * round trip. Deliberately not the full `getPublicLandingPageFullBySlug` —
- * that fetches every child table (FAQs, specs, gallery, ...) this doesn't
- * need, on every form submission.
+ * that fetches every child table (FAQs, specs, gallery, ...) neither caller
+ * needs, on every form submission / analytics ping.
  */
-export async function getPublicLandingPageForConsultation(slug: string): Promise<{
+export async function getPublicLandingPageContext(slug: string): Promise<{
   id: string;
   businessName: string;
   products: { id: string; name: string; itemType: LandingProduct["itemType"] }[];

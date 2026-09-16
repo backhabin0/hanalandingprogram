@@ -3,6 +3,7 @@ import type { LandingProduct } from "@/types/landing";
 import type { LandingVariant } from "./SiteHeader";
 import { ImagePlaceholder } from "./ImagePlaceholder";
 import { SectionHeading } from "./SectionHeading";
+import { TrackedLink } from "@/components/analytics/TrackedLink";
 
 const VARIANT_SECTION: Record<LandingVariant, string> = {
   a: "bg-white border-slate-100",
@@ -58,6 +59,7 @@ export function ProductSection({
   title,
   description,
   products,
+  slug,
   variant,
 }: {
   id?: string;
@@ -65,6 +67,7 @@ export function ProductSection({
   title: string;
   description?: string;
   products: LandingProduct[];
+  slug: string;
   variant: LandingVariant;
 }) {
   if (products.length === 0) return null;
@@ -147,7 +150,10 @@ export function ProductSection({
 
                   {product.ctaText && (
                     <div className="mt-6">
-                      <a
+                      <TrackedLink
+                        slug={slug}
+                        eventType="product_cta_click"
+                        productId={product.id}
                         href="#lead"
                         className={cn(
                           "inline-block rounded-lg px-5 py-3 text-sm font-semibold shadow-sm transition",
@@ -155,7 +161,7 @@ export function ProductSection({
                         )}
                       >
                         {product.ctaText}
-                      </a>
+                      </TrackedLink>
                     </div>
                   )}
                 </div>

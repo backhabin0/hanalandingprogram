@@ -3,6 +3,7 @@ import { resolveLandingPageSeo } from "@/lib/seo/resolve";
 import { buildLandingPageJsonLd } from "@/lib/seo/structured-data";
 import { StructuredData } from "./StructuredData";
 import { TEMPLATE_COMPONENTS } from "./templates";
+import { PageViewTracker } from "@/components/analytics/PageViewTracker";
 
 const DEFAULT_TEMPLATE: LandingTemplateId = "template-a";
 const KNOWN_TEMPLATE_IDS = new Set<string>(Object.keys(TEMPLATE_COMPONENTS));
@@ -30,6 +31,7 @@ export function LandingPageRenderer({ page }: { page: LandingPage }) {
   return (
     <>
       <StructuredData data={jsonLd} />
+      <PageViewTracker slug={page.slug} />
       <Template page={page} />
     </>
   );

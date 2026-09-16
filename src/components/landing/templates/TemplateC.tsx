@@ -42,6 +42,7 @@ export function TemplateC({ page }: { page: LandingPage }) {
         navItems={navItems}
         phone={page.phone}
         ctaLabel="상담 예약하기"
+        slug={page.slug}
         variant="c"
       />
 
@@ -54,6 +55,7 @@ export function TemplateC({ page }: { page: LandingPage }) {
           secondaryCta={{ label: "서비스 둘러보기", href: "#services" }}
           imageLabel={`${page.businessName} 대표 이미지`}
           imageUrl={page.mainImageUrl}
+          slug={page.slug}
           variant="c"
           facts={facts.length > 0 ? facts : undefined}
         />
@@ -72,6 +74,7 @@ export function TemplateC({ page }: { page: LandingPage }) {
           title={`${page.businessName}의 서비스`}
           description={page.description}
           products={page.products}
+          slug={page.slug}
           variant="c"
         />
 
@@ -82,6 +85,7 @@ export function TemplateC({ page }: { page: LandingPage }) {
           description="정확한 비용은 상담을 통해 개인별로 안내드립니다."
           mode="summary"
           summary={page.representativePrice}
+          slug={page.slug}
           variant="c"
         />
 
@@ -104,6 +108,7 @@ export function TemplateC({ page }: { page: LandingPage }) {
           kakaoUrl={page.kakaoUrl}
           businessHours={page.companyInfo?.businessHours}
           localityDescription={page.seo?.localityDescription}
+          slug={page.slug}
           variant="c"
         />
 

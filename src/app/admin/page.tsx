@@ -6,12 +6,14 @@ import { getTemplateMeta } from "@/lib/mock-data";
 import { getLandingPages } from "@/lib/landing-pages";
 import { getConsultationStatusCounts, getRecentConsultationRequests } from "@/lib/consultation-admin";
 import { INQUIRY_TYPE_LABEL } from "@/lib/consultation-requests";
+import { getRecentPageViewCount } from "@/lib/analytics-admin";
 
 export default async function AdminDashboardPage() {
-  const [landingPages, consultationCounts, recentConsultations] = await Promise.all([
+  const [landingPages, consultationCounts, recentConsultations, recentPageViews] = await Promise.all([
     getLandingPages(),
     getConsultationStatusCounts(),
     getRecentConsultationRequests(5),
+    getRecentPageViewCount(),
   ]);
   const publicCount = landingPages.filter((p) => p.status === "public").length;
   const privateCount = landingPages.filter((p) => p.status === "private").length;
@@ -32,25 +34,26 @@ export default async function AdminDashboardPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="전체 랜딩페이지" value={landingPages.length} description="누적 생성 페이지 수" />
         <StatCard label="공개" value={publicCount} description="현재 서비스 중인 페이지" tone="green" />
         <StatCard label="비공개" value={privateCount} description="초안 페이지" tone="amber" />
+        <StatCard label="최근 7일 조회수" value={recentPageViews.toLocaleString()} description="전체 공개 페이지 합산" tone="blue" />
         <StatCard label="전체 상담" value={consultationCounts.total} description="누적 상담 접수 건수" tone="blue" />
         <StatCard label="신규 상담" value={consultationCounts.new} description="아직 연락하지 않은 건수" tone="blue" />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <h2 className="text-base font-semibold text-slate-900">최근 7일 방문 추이</h2>
-          <p className="mt-1 text-sm text-slate-500">Analytics 연동 예정</p>
-          <div className="flex h-40 items-center justify-center text-sm text-slate-400">준비 중입니다.</div>
-        </Card>
-
+      <div className="mt-6">
         <Card>
-          <h2 className="text-base font-semibold text-slate-900">인기 페이지</h2>
-          <p className="mt-1 text-sm text-slate-500">Analytics 연동 예정</p>
-          <div className="flex h-40 items-center justify-center text-sm text-slate-400">준비 중입니다.</div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">전환 분석</h2>
+              <p className="mt-1 text-sm text-slate-500">조회수, 클릭, 상담 전환을 기간/페이지별로 확인하세요.</p>
+            </div>
+            <Link href="/admin/analytics" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+              통계 보기 →
+            </Link>
+          </div>
         </Card>
       </div>
 

@@ -2,6 +2,7 @@ import { cn, toTelHref } from "@/lib/utils";
 import type { LandingVariant } from "./SiteHeader";
 import { ImagePlaceholder } from "./ImagePlaceholder";
 import { SectionHeading } from "./SectionHeading";
+import { TrackedLink } from "@/components/analytics/TrackedLink";
 
 const VARIANT_SECTION: Record<LandingVariant, string> = {
   a: "bg-slate-50 border-slate-100",
@@ -37,6 +38,7 @@ export function LocationSection({
   kakaoUrl,
   businessHours,
   localityDescription,
+  slug,
   variant,
 }: {
   id?: string;
@@ -49,6 +51,7 @@ export function LocationSection({
   businessHours?: string;
   /** Real sentence from admin-entered SEO settings — never generated. */
   localityDescription?: string;
+  slug: string;
   variant: LandingVariant;
 }) {
   if (!address && !region && !phone && !kakaoUrl && !businessHours && !localityDescription) return null;
@@ -96,7 +99,9 @@ export function LocationSection({
                   전화 문의
                 </dt>
                 <dd className={cn("mt-1 text-base font-medium", VARIANT_VALUE[variant])}>
-                  <a href={toTelHref(phone)}>{phone}</a>
+                  <TrackedLink slug={slug} eventType="phone_click" href={toTelHref(phone)}>
+                    {phone}
+                  </TrackedLink>
                 </dd>
               </div>
             )}
@@ -106,9 +111,9 @@ export function LocationSection({
                   카카오톡 문의
                 </dt>
                 <dd className={cn("mt-1 text-base font-medium", VARIANT_VALUE[variant])}>
-                  <a href={kakaoUrl} target="_blank" rel="noopener noreferrer">
+                  <TrackedLink slug={slug} eventType="kakao_click" href={kakaoUrl} target="_blank" rel="noopener noreferrer">
                     카카오톡 채널 바로가기
-                  </a>
+                  </TrackedLink>
                 </dd>
               </div>
             )}

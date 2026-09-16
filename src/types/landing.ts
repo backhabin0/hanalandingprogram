@@ -25,6 +25,9 @@ export type InquiryType = "consultation" | "quote" | "product" | "service" | "ot
 /** Matches `consultation_requests.preferred_contact`'s DB CHECK constraint exactly (Stage 10). Optional — absent means no preference given. */
 export type PreferredContact = "phone" | "kakao" | "email";
 
+/** Matches `landing_page_events.event_type`'s DB CHECK constraint exactly (Stage 12). */
+export type AnalyticsEventType = "page_view" | "phone_click" | "kakao_click" | "product_cta_click" | "quote_cta_click";
+
 /** A single representative price shown near the hero / pricing section. */
 export interface LandingPriceSummary {
   /** e.g. "대표 가격", "월 이용료" */

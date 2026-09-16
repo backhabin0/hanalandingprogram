@@ -38,6 +38,7 @@ export function TemplateB({ page }: { page: LandingPage }) {
         navItems={navItems}
         phone={page.phone}
         ctaLabel="지금 구매하기"
+        slug={page.slug}
         variant="b"
       />
 
@@ -50,6 +51,7 @@ export function TemplateB({ page }: { page: LandingPage }) {
           secondaryCta={{ label: "제품 살펴보기", href: "#products" }}
           imageLabel={`${page.businessName} 대표 제품 이미지`}
           imageUrl={page.mainImageUrl ?? heroProduct?.image}
+          slug={page.slug}
           variant="b"
           imagePosition="left"
           priceBadge={
@@ -78,6 +80,7 @@ export function TemplateB({ page }: { page: LandingPage }) {
           title={`${page.businessName} 제품 구성`}
           description={page.description}
           products={page.products}
+          slug={page.slug}
           variant="b"
         />
 
@@ -105,6 +108,7 @@ export function TemplateB({ page }: { page: LandingPage }) {
           description="패키지별 구성과 가격을 비교해 보고 가장 적합한 옵션을 선택하세요."
           mode="tiers"
           products={page.products}
+          slug={page.slug}
           variant="b"
         />
 
@@ -133,6 +137,7 @@ export function TemplateB({ page }: { page: LandingPage }) {
           kakaoUrl={page.kakaoUrl}
           businessHours={page.companyInfo?.businessHours}
           localityDescription={page.seo?.localityDescription}
+          slug={page.slug}
           variant="b"
         />
 

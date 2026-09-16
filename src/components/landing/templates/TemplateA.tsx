@@ -36,6 +36,7 @@ export function TemplateA({ page }: { page: LandingPage }) {
         navItems={navItems}
         phone={page.phone}
         ctaLabel="무료 견적 받기"
+        slug={page.slug}
         variant="a"
       />
 
@@ -48,6 +49,7 @@ export function TemplateA({ page }: { page: LandingPage }) {
           secondaryCta={{ label: "서비스 살펴보기", href: "#services" }}
           imageLabel={`${page.businessName} 현장 이미지`}
           imageUrl={page.mainImageUrl}
+          slug={page.slug}
           variant="a"
         />
 
@@ -59,6 +61,7 @@ export function TemplateA({ page }: { page: LandingPage }) {
           title={`${page.businessName}가 제공하는 서비스`}
           description={page.description}
           products={page.products}
+          slug={page.slug}
           variant="a"
         />
 
@@ -86,6 +89,7 @@ export function TemplateA({ page }: { page: LandingPage }) {
           description="현장 환경에 따라 구성이 달라지므로, 무료 실측 후 정식 견적서를 제공합니다."
           mode="summary"
           summary={page.representativePrice}
+          slug={page.slug}
           variant="a"
         />
 
@@ -123,6 +127,7 @@ export function TemplateA({ page }: { page: LandingPage }) {
           kakaoUrl={page.kakaoUrl}
           businessHours={page.companyInfo?.businessHours}
           localityDescription={page.seo?.localityDescription}
+          slug={page.slug}
           variant="a"
         />
 

@@ -2,7 +2,7 @@
 
 import { randomUUID } from "crypto";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getPublicLandingPageForConsultation } from "@/lib/public-landing-pages";
+import { getPublicLandingPageContext } from "@/lib/public-landing-pages";
 import {
   validateConsultationSubmission,
   type ConsultationSubmissionInput,
@@ -51,7 +51,7 @@ export async function createConsultationRequestAction(
     return { ok: false, error: validated.error };
   }
 
-  const page = await getPublicLandingPageForConsultation(input.slug);
+  const page = await getPublicLandingPageContext(input.slug);
   if (!page) {
     // Slug doesn't exist, or the page isn't public (includes the case where
     // someone calls this action directly against a private/deleted slug,
