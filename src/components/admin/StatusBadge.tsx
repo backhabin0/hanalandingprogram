@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { ConsultationStatus, LandingPageStatus } from "@/types/landing";
+import { CONSULTATION_STATUS_LABEL } from "@/lib/consultation-requests";
 
 const PAGE_STATUS_LABEL: Record<LandingPageStatus, string> = {
   public: "공개",
@@ -11,16 +12,11 @@ const PAGE_STATUS_TONE: Record<LandingPageStatus, string> = {
   private: "bg-amber-50 text-amber-700 ring-amber-600/20",
 };
 
-const CONSULTATION_STATUS_LABEL: Record<ConsultationStatus, string> = {
-  new: "신규",
-  contacted: "연락완료",
-  closed: "종료",
-};
-
 const CONSULTATION_STATUS_TONE: Record<ConsultationStatus, string> = {
   new: "bg-blue-50 text-blue-700 ring-blue-600/20",
   contacted: "bg-amber-50 text-amber-700 ring-amber-600/20",
-  closed: "bg-slate-100 text-slate-600 ring-slate-500/20",
+  completed: "bg-slate-100 text-slate-600 ring-slate-500/20",
+  cancelled: "bg-rose-50 text-rose-600 ring-rose-500/20",
 };
 
 function Badge({ label, className }: { label: string; className: string }) {

@@ -149,6 +149,9 @@ export function TemplateB({ page }: { page: LandingPage }) {
           description="현장 환경에 맞는 패키지를 추천해 드립니다."
           phone={page.phone}
           kakaoUrl={page.kakaoUrl}
+          slug={page.slug}
+          products={page.products}
+          defaultInquiryType="quote"
           variant="b"
         />
       </main>

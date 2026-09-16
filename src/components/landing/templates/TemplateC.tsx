@@ -145,6 +145,8 @@ export function TemplateC({ page }: { page: LandingPage }) {
           description="부담 없이 문의 남겨주시면 순차적으로 연락드립니다."
           phone={page.phone}
           kakaoUrl={page.kakaoUrl}
+          slug={page.slug}
+          products={page.products}
           variant="c"
         />
       </main>

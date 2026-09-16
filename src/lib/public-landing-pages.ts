@@ -273,3 +273,29 @@ export const getPublicLandingPageFullBySlug = cache(
     };
   }
 );
+
+/**
+ * The minimal lookup `createConsultationRequestAction` needs: confirms the
+ * slug is a real, currently-public page, lists which product ids are valid
+ * to attach a consultation to (active products of that page only), and
+ * carries `businessName` + each product's `name`/`itemType` so the Stage 11
+ * notification email can be built without a second, anon-SELECT-requiring
+ * round trip. Deliberately not the full `getPublicLandingPageFullBySlug` —
+ * that fetches every child table (FAQs, specs, gallery, ...) this doesn't
+ * need, on every form submission.
+ */
+export async function getPublicLandingPageForConsultation(slug: string): Promise<{
+  id: string;
+  businessName: string;
+  products: { id: string; name: string; itemType: LandingProduct["itemType"] }[];
+} | null> {
+  const row = await getPublicLandingPageBySlug(slug);
+  if (!row) return null;
+
+  const products = await getPublicProducts(row.id);
+  return {
+    id: row.id,
+    businessName: row.business_name,
+    products: products.map((p) => ({ id: p.id, name: p.name, itemType: p.itemType })),
+  };
+}

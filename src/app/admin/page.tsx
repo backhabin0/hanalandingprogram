@@ -1,12 +1,18 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, StatCard } from "@/components/admin/Card";
-import { PageStatusBadge } from "@/components/admin/StatusBadge";
+import { PageStatusBadge, ConsultationStatusBadge } from "@/components/admin/StatusBadge";
 import { getTemplateMeta } from "@/lib/mock-data";
 import { getLandingPages } from "@/lib/landing-pages";
+import { getConsultationStatusCounts, getRecentConsultationRequests } from "@/lib/consultation-admin";
+import { INQUIRY_TYPE_LABEL } from "@/lib/consultation-requests";
 
 export default async function AdminDashboardPage() {
-  const landingPages = await getLandingPages();
+  const [landingPages, consultationCounts, recentConsultations] = await Promise.all([
+    getLandingPages(),
+    getConsultationStatusCounts(),
+    getRecentConsultationRequests(5),
+  ]);
   const publicCount = landingPages.filter((p) => p.status === "public").length;
   const privateCount = landingPages.filter((p) => p.status === "private").length;
   const recentPages = [...landingPages].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)).slice(0, 5);
@@ -26,11 +32,12 @@ export default async function AdminDashboardPage() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard label="전체 랜딩페이지" value={landingPages.length} description="누적 생성 페이지 수" />
         <StatCard label="공개" value={publicCount} description="현재 서비스 중인 페이지" tone="green" />
         <StatCard label="비공개" value={privateCount} description="초안 페이지" tone="amber" />
-        <StatCard label="상담" value={0} description="상담 기능은 준비 중입니다" tone="blue" />
+        <StatCard label="전체 상담" value={consultationCounts.total} description="누적 상담 접수 건수" tone="blue" />
+        <StatCard label="신규 상담" value={consultationCounts.new} description="아직 연락하지 않은 건수" tone="blue" />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -91,10 +98,33 @@ export default async function AdminDashboardPage() {
           <div className="h-2" />
         </Card>
 
-        <Card>
-          <h2 className="text-base font-semibold text-slate-900">신규 상담</h2>
-          <p className="mt-1 text-sm text-slate-500">상담 접수 기능 준비 중</p>
-          <div className="flex h-32 items-center justify-center text-sm text-slate-400">준비 중입니다.</div>
+        <Card padded={false}>
+          <div className="flex items-center justify-between px-6 pt-6">
+            <h2 className="text-base font-semibold text-slate-900">최근 상담</h2>
+            <Link href="/admin/consultations" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+              전체 보기 →
+            </Link>
+          </div>
+          {recentConsultations.length === 0 ? (
+            <div className="px-6 py-12 text-center text-sm text-slate-500">아직 접수된 상담이 없습니다.</div>
+          ) : (
+            <ul className="mt-4 divide-y divide-slate-100">
+              {recentConsultations.map((c) => (
+                <li key={c.id} className="px-6 py-3">
+                  <Link href={`/admin/consultations/${c.id}`} className="block hover:bg-slate-50">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-slate-900">{c.name}</p>
+                      <ConsultationStatusBadge status={c.status} />
+                    </div>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {INQUIRY_TYPE_LABEL[c.inquiryType]} · {c.businessName ?? "삭제된 페이지"}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="h-2" />
         </Card>
       </div>
     </div>

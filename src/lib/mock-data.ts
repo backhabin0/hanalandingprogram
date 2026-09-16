@@ -614,13 +614,17 @@ export const templateDemoContent: Record<string, LandingPage> = {
 // Consultations
 // ---------------------------------------------------------------------------
 
+// Stage 10 gave `ConsultationRequest` its real, DB-mirroring shape (see
+// `types/landing.ts`) — this mock array (still the only thing
+// `/admin/consultations` renders; Stage 11 wires that page to the real
+// table) was updated field-for-field to match, but stays fabricated data.
 export const consultations: ConsultationRequest[] = [
-  { id: "cons-001", landingPageId: "page-001", businessName: "테크시큐리티", customerName: "이현우", phone: "010-1234-5678", message: "물류센터 CCTV 신규 설치 견적 문의드립니다.", status: "new", createdAt: "2026-09-13T10:20:00.000Z" },
-  { id: "cons-002", landingPageId: "page-001", businessName: "테크시큐리티", customerName: "박소연", phone: "010-2345-6789", message: "기존 CCTV 노후 교체 상담 원합니다.", status: "contacted", createdAt: "2026-09-11T14:05:00.000Z" },
-  { id: "cons-003", landingPageId: "page-003", businessName: "브라이트치과", customerName: "김민지", phone: "010-3456-7890", message: "임플란트 상담 예약하고 싶습니다.", status: "new", createdAt: "2026-09-13T09:40:00.000Z" },
-  { id: "cons-004", landingPageId: "page-003", businessName: "브라이트치과", customerName: "정우성", phone: "010-4567-8901", message: "투명교정 비용이 궁금합니다.", status: "closed", createdAt: "2026-09-05T11:15:00.000Z" },
-  { id: "cons-005", landingPageId: "page-002", businessName: "비전가드 스토어", customerName: "최유진", phone: "010-5678-9012", message: "오피스 프로 패키지 설치 문의드립니다.", status: "contacted", createdAt: "2026-09-09T16:30:00.000Z" },
-  { id: "cons-006", landingPageId: "page-004", businessName: "파워핏짐", customerName: "오지훈", phone: "010-6789-0123", message: "PT 체험 상담 신청합니다.", status: "new", createdAt: "2026-09-12T18:00:00.000Z" },
+  { id: "cons-001", landingPageId: "page-001", productId: null, inquiryType: "quote", name: "이현우", phone: "010-1234-5678", message: "물류센터 CCTV 신규 설치 견적 문의드립니다.", privacyConsent: true, status: "new", createdAt: "2026-09-13T10:20:00.000Z", updatedAt: "2026-09-13T10:20:00.000Z" },
+  { id: "cons-002", landingPageId: "page-001", productId: null, inquiryType: "consultation", name: "박소연", phone: "010-2345-6789", message: "기존 CCTV 노후 교체 상담 원합니다.", privacyConsent: true, status: "contacted", createdAt: "2026-09-11T14:05:00.000Z", updatedAt: "2026-09-12T09:00:00.000Z" },
+  { id: "cons-003", landingPageId: "page-003", productId: null, inquiryType: "consultation", name: "김민지", phone: "010-3456-7890", message: "임플란트 상담 예약하고 싶습니다.", privacyConsent: true, status: "new", createdAt: "2026-09-13T09:40:00.000Z", updatedAt: "2026-09-13T09:40:00.000Z" },
+  { id: "cons-004", landingPageId: "page-003", productId: null, inquiryType: "quote", name: "정우성", phone: "010-4567-8901", message: "투명교정 비용이 궁금합니다.", privacyConsent: true, status: "completed", createdAt: "2026-09-05T11:15:00.000Z", updatedAt: "2026-09-06T10:00:00.000Z" },
+  { id: "cons-005", landingPageId: "page-002", productId: null, inquiryType: "product", name: "최유진", phone: "010-5678-9012", message: "오피스 프로 패키지 설치 문의드립니다.", privacyConsent: true, status: "contacted", createdAt: "2026-09-09T16:30:00.000Z", updatedAt: "2026-09-10T08:00:00.000Z" },
+  { id: "cons-006", landingPageId: "page-004", productId: null, inquiryType: "consultation", name: "오지훈", phone: "010-6789-0123", message: "PT 체험 상담 신청합니다.", privacyConsent: true, status: "new", createdAt: "2026-09-12T18:00:00.000Z", updatedAt: "2026-09-12T18:00:00.000Z" },
 ];
 
 // ---------------------------------------------------------------------------

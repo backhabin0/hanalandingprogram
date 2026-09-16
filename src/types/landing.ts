@@ -16,7 +16,14 @@ export type LandingTemplateId = "template-a" | "template-b" | "template-c";
  */
 export type LandingPageStatus = "public" | "private";
 
-export type ConsultationStatus = "new" | "contacted" | "closed";
+/** Matches `consultation_requests.status`'s DB CHECK constraint exactly (Stage 10). */
+export type ConsultationStatus = "new" | "contacted" | "completed" | "cancelled";
+
+/** Matches `consultation_requests.inquiry_type`'s DB CHECK constraint exactly (Stage 10). */
+export type InquiryType = "consultation" | "quote" | "product" | "service" | "other";
+
+/** Matches `consultation_requests.preferred_contact`'s DB CHECK constraint exactly (Stage 10). Optional — absent means no preference given. */
+export type PreferredContact = "phone" | "kakao" | "email";
 
 /** A single representative price shown near the hero / pricing section. */
 export interface LandingPriceSummary {
@@ -245,15 +252,28 @@ export type LandingPageRecord = Omit<
   "products" | "features" | "metrics" | "specifications" | "faqs" | "processSteps" | "companyInfo" | "seo"
 >;
 
+/**
+ * Mirrors `consultation_requests` (Stage 10 — `006_create_consultation_requests.sql`)
+ * field-for-field. `landingPageId`/`productId` are nullable because both FKs
+ * are `ON DELETE SET NULL`: a consultation record must outlive the page or
+ * product it was submitted about.
+ */
 export interface ConsultationRequest {
   id: string;
-  landingPageId: string;
-  businessName: string;
-  customerName: string;
+  landingPageId: string | null;
+  productId: string | null;
+  inquiryType: InquiryType;
+  name: string;
   phone: string;
+  email?: string;
+  companyName?: string;
   message?: string;
+  preferredContact?: PreferredContact;
+  privacyConsent: boolean;
   status: ConsultationStatus;
+  submissionId?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface TemplateMeta {

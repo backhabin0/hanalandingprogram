@@ -228,6 +228,27 @@ type LandingGalleryImageInsert = Pick<LandingGalleryImageRow, "landing_page_id" 
   Partial<Omit<LandingGalleryImageRow, "landing_page_id" | "image_url">>;
 type LandingGalleryImageUpdate = Partial<LandingGalleryImageRow>;
 
+type ConsultationRequestRow = {
+  id: string;
+  landing_page_id: string | null;
+  product_id: string | null;
+  inquiry_type: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  company_name: string | null;
+  message: string | null;
+  preferred_contact: string | null;
+  privacy_consent: boolean;
+  status: string;
+  submission_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+type ConsultationRequestInsert = Pick<ConsultationRequestRow, "name" | "phone" | "privacy_consent"> &
+  Partial<Omit<ConsultationRequestRow, "name" | "phone" | "privacy_consent">>;
+type ConsultationRequestUpdate = Partial<ConsultationRequestRow>;
+
 export type Database = {
   // Without this marker, @supabase/supabase-js's SupabaseClient generic
   // silently resolves `.insert()`/`.update()` payload types to `never`
@@ -315,6 +336,12 @@ export type Database = {
         Row: LandingGalleryImageRow;
         Insert: LandingGalleryImageInsert;
         Update: LandingGalleryImageUpdate;
+        Relationships: [];
+      };
+      consultation_requests: {
+        Row: ConsultationRequestRow;
+        Insert: ConsultationRequestInsert;
+        Update: ConsultationRequestUpdate;
         Relationships: [];
       };
     };

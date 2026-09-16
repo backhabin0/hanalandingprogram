@@ -139,6 +139,9 @@ export function TemplateA({ page }: { page: LandingPage }) {
           description="현장 실측부터 견적까지, 부담 없이 문의해 주세요."
           phone={page.phone}
           kakaoUrl={page.kakaoUrl}
+          slug={page.slug}
+          products={page.products}
+          defaultInquiryType="quote"
           variant="a"
         />
       </main>
