@@ -225,6 +225,9 @@ export async function updateLandingPageAction(
   _prevState: LandingPageFormState,
   formData: FormData
 ): Promise<LandingPageFormState> {
+  // Outside the try/catch below on purpose: redirect() works by throwing,
+  // and a catch-all here would swallow that throw and report a logged-out
+  // admin's session as a failed save instead of sending them to /login.
   await requireUser();
 
   const parsed = parseLandingPageFields(formData);
@@ -232,7 +235,21 @@ export async function updateLandingPageAction(
 
   const supabase = await createSupabaseServerClient();
 
-  const { error: updateError } = await supabase.from("landing_pages").update(parsed.data).eq("id", id);
+  // supabase-js only returns `{ error }` for a query Postgres/PostgREST
+  // itself rejected — a transport-level failure (timeout, connection reset)
+  // throws instead. Uncaught, that crashes the whole Server Action, which
+  // Next.js turns into an opaque 500/503 response; the client is then left
+  // with no `state.error` to show, which is how "저장되었습니다" was seen
+  // rendering even though the update never reached the database. Catching
+  // it here guarantees this action always resolves to a normal
+  // `{ error }`/`{ error: null }` result instead of crashing uncaught.
+  let updateError;
+  try {
+    ({ error: updateError } = await supabase.from("landing_pages").update(parsed.data).eq("id", id));
+  } catch (err) {
+    console.error("[updateLandingPageAction] unexpected error:", err instanceof Error ? err.message : "unknown");
+    return { error: "저장 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요." };
+  }
   if (updateError) return { error: mapSupabaseError(updateError) };
 
   revalidatePath("/admin");
