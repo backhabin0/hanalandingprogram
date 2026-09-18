@@ -1,19 +1,25 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { templates } from "@/lib/mock-data";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true },
+};
 
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col bg-slate-950 text-white">
       <main className="mx-auto flex w-full max-w-[1000px] flex-1 flex-col justify-center px-6 py-24">
         <span className="text-sm font-semibold uppercase tracking-wide text-blue-400">
-          Hana LP Studio · Stage 1
+          Hana LP Studio
         </span>
         <h1 className="mt-4 max-w-2xl text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
           업종별 웹형 랜딩페이지를 자동으로 생성하고 관리하는 CMS
         </h1>
         <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-400">
-          이번 단계는 프로젝트 기본 구조, 관리자 UI, 웹형 공개 랜딩페이지 디자인 시스템까지만
-          구현되어 있습니다. DB · 로그인 · 실제 저장 기능은 다음 단계에서 연결됩니다.
+          업체 정보, 제품/서비스, 사례, FAQ를 입력하면 SEO가 적용된 랜딩페이지가
+          자동으로 만들어집니다.
         </p>
 
         <div className="mt-10 flex flex-wrap gap-3">

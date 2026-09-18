@@ -300,3 +300,38 @@ export async function getPublicLandingPageContext(slug: string): Promise<{
     products: products.map((p) => ({ id: p.id, name: p.name, itemType: p.itemType })),
   };
 }
+
+/**
+ * Every public landing page eligible for `/sitemap.xml` — Stage 13's
+ * inclusion rule: `status = 'public'` AND its SEO settings row (if any)
+ * doesn't have `seo_noindex = true`. A page with no SEO settings row yet is
+ * indexable by default (Stage 8's fallback), so it's included too.
+ *
+ * Two plain queries rather than an embedded PostgREST select, matching the
+ * per-table style already used by every other function in this file.
+ */
+export async function getPublicSitemapEntries(): Promise<{ slug: string; updatedAt: string }[]> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data: pages, error: pagesError } = await supabase
+    .from("landing_pages")
+    .select("id, slug, updated_at")
+    .eq("status", "public");
+  if (pagesError) failLoad("sitemap landing_pages", pagesError);
+  if (!pages || pages.length === 0) return [];
+
+  const { data: seoRows, error: seoError } = await supabase
+    .from("landing_page_seo_settings")
+    .select("landing_page_id, seo_noindex")
+    .in(
+      "landing_page_id",
+      pages.map((p) => p.id)
+    );
+  if (seoError) failLoad("sitemap landing_page_seo_settings", seoError);
+
+  const noindexIds = new Set((seoRows ?? []).filter((row) => row.seo_noindex).map((row) => row.landing_page_id));
+
+  return pages
+    .filter((page) => !noindexIds.has(page.id))
+    .map((page) => ({ slug: page.slug, updatedAt: page.updated_at }));
+}
