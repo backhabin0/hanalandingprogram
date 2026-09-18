@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { mapSupabaseError } from "@/lib/supabase-errors";
+import { mapSupabaseError, SAFE_SAVE_ERROR_MESSAGE, logUnexpectedSaveError } from "@/lib/supabase-errors";
 import { uploadImageObject } from "@/lib/storage/upload";
 import { removeAssetIfUnreferenced, removeUploadedObject } from "@/lib/storage/asset-refs";
 import {
@@ -65,46 +65,59 @@ export async function uploadLandingLogoAction(landingPageId: string, formData: F
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const uploaded = await uploadImageObject(supabase, "logo", getFile(formData), (ext) =>
-    buildLogoPath(landingPageId, ext)
-  );
-  if (!uploaded.ok) return { error: uploaded.error };
+  let uploadedPath: string | undefined;
+  try {
+    const uploaded = await uploadImageObject(supabase, "logo", getFile(formData), (ext) =>
+      buildLogoPath(landingPageId, ext)
+    );
+    if (!uploaded.ok) return { error: uploaded.error };
+    uploadedPath = uploaded.result.path;
 
-  const { data: existing } = await supabase
-    .from("landing_pages")
-    .select("logo_url")
-    .eq("id", landingPageId)
-    .maybeSingle();
+    const { data: existing } = await supabase
+      .from("landing_pages")
+      .select("logo_url")
+      .eq("id", landingPageId)
+      .maybeSingle();
 
-  const { error } = await supabase.from("landing_pages").update({ logo_url: uploaded.result.url }).eq("id", landingPageId);
-  if (error) {
-    await removeUploadedObject(supabase, uploaded.result.path);
-    return { error: mapSupabaseError(error) };
+    const { error } = await supabase.from("landing_pages").update({ logo_url: uploaded.result.url }).eq("id", landingPageId);
+    if (error) {
+      await removeUploadedObject(supabase, uploaded.result.path);
+      return { error: mapSupabaseError(error) };
+    }
+
+    await removeAssetIfUnreferenced(supabase, existing?.logo_url ?? null);
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, url: uploaded.result.url };
+  } catch (err) {
+    logUnexpectedSaveError("uploadLandingLogoAction", err);
+    if (uploadedPath) await removeUploadedObject(supabase, uploadedPath);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  await removeAssetIfUnreferenced(supabase, existing?.logo_url ?? null);
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, url: uploaded.result.url };
 }
 
 export async function removeLandingLogoAction(landingPageId: string): Promise<SingleImageResult> {
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const { data: existing } = await supabase
-    .from("landing_pages")
-    .select("logo_url")
-    .eq("id", landingPageId)
-    .maybeSingle();
+  try {
+    const { data: existing } = await supabase
+      .from("landing_pages")
+      .select("logo_url")
+      .eq("id", landingPageId)
+      .maybeSingle();
 
-  const { error } = await supabase.from("landing_pages").update({ logo_url: null }).eq("id", landingPageId);
-  if (error) return { error: mapSupabaseError(error) };
+    const { error } = await supabase.from("landing_pages").update({ logo_url: null }).eq("id", landingPageId);
+    if (error) return { error: mapSupabaseError(error) };
 
-  await removeAssetIfUnreferenced(supabase, existing?.logo_url ?? null);
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, url: null };
+    await removeAssetIfUnreferenced(supabase, existing?.logo_url ?? null);
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, url: null };
+  } catch (err) {
+    logUnexpectedSaveError("removeLandingLogoAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -115,49 +128,62 @@ export async function uploadLandingHeroAction(landingPageId: string, formData: F
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const uploaded = await uploadImageObject(supabase, "hero", getFile(formData), (ext) =>
-    buildHeroPath(landingPageId, ext)
-  );
-  if (!uploaded.ok) return { error: uploaded.error };
+  let uploadedPath: string | undefined;
+  try {
+    const uploaded = await uploadImageObject(supabase, "hero", getFile(formData), (ext) =>
+      buildHeroPath(landingPageId, ext)
+    );
+    if (!uploaded.ok) return { error: uploaded.error };
+    uploadedPath = uploaded.result.path;
 
-  const { data: existing } = await supabase
-    .from("landing_pages")
-    .select("main_image_url")
-    .eq("id", landingPageId)
-    .maybeSingle();
+    const { data: existing } = await supabase
+      .from("landing_pages")
+      .select("main_image_url")
+      .eq("id", landingPageId)
+      .maybeSingle();
 
-  const { error } = await supabase
-    .from("landing_pages")
-    .update({ main_image_url: uploaded.result.url })
-    .eq("id", landingPageId);
-  if (error) {
-    await removeUploadedObject(supabase, uploaded.result.path);
-    return { error: mapSupabaseError(error) };
+    const { error } = await supabase
+      .from("landing_pages")
+      .update({ main_image_url: uploaded.result.url })
+      .eq("id", landingPageId);
+    if (error) {
+      await removeUploadedObject(supabase, uploaded.result.path);
+      return { error: mapSupabaseError(error) };
+    }
+
+    await removeAssetIfUnreferenced(supabase, existing?.main_image_url ?? null);
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, url: uploaded.result.url };
+  } catch (err) {
+    logUnexpectedSaveError("uploadLandingHeroAction", err);
+    if (uploadedPath) await removeUploadedObject(supabase, uploadedPath);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  await removeAssetIfUnreferenced(supabase, existing?.main_image_url ?? null);
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, url: uploaded.result.url };
 }
 
 export async function removeLandingHeroAction(landingPageId: string): Promise<SingleImageResult> {
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const { data: existing } = await supabase
-    .from("landing_pages")
-    .select("main_image_url")
-    .eq("id", landingPageId)
-    .maybeSingle();
+  try {
+    const { data: existing } = await supabase
+      .from("landing_pages")
+      .select("main_image_url")
+      .eq("id", landingPageId)
+      .maybeSingle();
 
-  const { error } = await supabase.from("landing_pages").update({ main_image_url: null }).eq("id", landingPageId);
-  if (error) return { error: mapSupabaseError(error) };
+    const { error } = await supabase.from("landing_pages").update({ main_image_url: null }).eq("id", landingPageId);
+    if (error) return { error: mapSupabaseError(error) };
 
-  await removeAssetIfUnreferenced(supabase, existing?.main_image_url ?? null);
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, url: null };
+    await removeAssetIfUnreferenced(supabase, existing?.main_image_url ?? null);
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, url: null };
+  } catch (err) {
+    logUnexpectedSaveError("removeLandingHeroAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -172,58 +198,71 @@ export async function uploadProductImageAction(
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const { data: product } = await supabase
-    .from("landing_products")
-    .select("id, image_url")
-    .eq("id", productId)
-    .eq("landing_page_id", landingPageId)
-    .maybeSingle();
-  if (!product) return { error: "제품을 찾을 수 없습니다." };
+  let uploadedPath: string | undefined;
+  try {
+    const { data: product } = await supabase
+      .from("landing_products")
+      .select("id, image_url")
+      .eq("id", productId)
+      .eq("landing_page_id", landingPageId)
+      .maybeSingle();
+    if (!product) return { error: "제품을 찾을 수 없습니다." };
 
-  const uploaded = await uploadImageObject(supabase, "product", getFile(formData), (ext) =>
-    buildProductImagePath(landingPageId, productId, ext)
-  );
-  if (!uploaded.ok) return { error: uploaded.error };
+    const uploaded = await uploadImageObject(supabase, "product", getFile(formData), (ext) =>
+      buildProductImagePath(landingPageId, productId, ext)
+    );
+    if (!uploaded.ok) return { error: uploaded.error };
+    uploadedPath = uploaded.result.path;
 
-  const { error } = await supabase
-    .from("landing_products")
-    .update({ image_url: uploaded.result.url })
-    .eq("id", productId)
-    .eq("landing_page_id", landingPageId);
-  if (error) {
-    await removeUploadedObject(supabase, uploaded.result.path);
-    return { error: mapSupabaseError(error) };
+    const { error } = await supabase
+      .from("landing_products")
+      .update({ image_url: uploaded.result.url })
+      .eq("id", productId)
+      .eq("landing_page_id", landingPageId);
+    if (error) {
+      await removeUploadedObject(supabase, uploaded.result.path);
+      return { error: mapSupabaseError(error) };
+    }
+
+    await removeAssetIfUnreferenced(supabase, product.image_url);
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, url: uploaded.result.url };
+  } catch (err) {
+    logUnexpectedSaveError("uploadProductImageAction", err);
+    if (uploadedPath) await removeUploadedObject(supabase, uploadedPath);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  await removeAssetIfUnreferenced(supabase, product.image_url);
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, url: uploaded.result.url };
 }
 
 export async function removeProductImageAction(landingPageId: string, productId: string): Promise<SingleImageResult> {
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const { data: product } = await supabase
-    .from("landing_products")
-    .select("id, image_url")
-    .eq("id", productId)
-    .eq("landing_page_id", landingPageId)
-    .maybeSingle();
-  if (!product) return { error: "제품을 찾을 수 없습니다." };
+  try {
+    const { data: product } = await supabase
+      .from("landing_products")
+      .select("id, image_url")
+      .eq("id", productId)
+      .eq("landing_page_id", landingPageId)
+      .maybeSingle();
+    if (!product) return { error: "제품을 찾을 수 없습니다." };
 
-  const { error } = await supabase
-    .from("landing_products")
-    .update({ image_url: null })
-    .eq("id", productId)
-    .eq("landing_page_id", landingPageId);
-  if (error) return { error: mapSupabaseError(error) };
+    const { error } = await supabase
+      .from("landing_products")
+      .update({ image_url: null })
+      .eq("id", productId)
+      .eq("landing_page_id", landingPageId);
+    if (error) return { error: mapSupabaseError(error) };
 
-  await removeAssetIfUnreferenced(supabase, product.image_url);
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, url: null };
+    await removeAssetIfUnreferenced(supabase, product.image_url);
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, url: null };
+  } catch (err) {
+    logUnexpectedSaveError("removeProductImageAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -254,38 +293,46 @@ export async function addProductGalleryImageAction(
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const { data: product } = await supabase
-    .from("landing_products")
-    .select("id")
-    .eq("id", productId)
-    .eq("landing_page_id", landingPageId)
-    .maybeSingle();
-  if (!product) return { error: "제품을 찾을 수 없습니다." };
+  let uploadedPath: string | undefined;
+  try {
+    const { data: product } = await supabase
+      .from("landing_products")
+      .select("id")
+      .eq("id", productId)
+      .eq("landing_page_id", landingPageId)
+      .maybeSingle();
+    if (!product) return { error: "제품을 찾을 수 없습니다." };
 
-  const uploaded = await uploadImageObject(supabase, "gallery", getFile(formData), (ext) =>
-    buildProductImagePath(landingPageId, productId, ext)
-  );
-  if (!uploaded.ok) return { error: uploaded.error };
+    const uploaded = await uploadImageObject(supabase, "gallery", getFile(formData), (ext) =>
+      buildProductImagePath(landingPageId, productId, ext)
+    );
+    if (!uploaded.ok) return { error: uploaded.error };
+    uploadedPath = uploaded.result.path;
 
-  const { count } = await supabase
-    .from("landing_product_images")
-    .select("*", { count: "exact", head: true })
-    .eq("product_id", productId);
+    const { count } = await supabase
+      .from("landing_product_images")
+      .select("*", { count: "exact", head: true })
+      .eq("product_id", productId);
 
-  const { error } = await supabase.from("landing_product_images").insert({
-    landing_page_id: landingPageId,
-    product_id: productId,
-    image_url: uploaded.result.url,
-    sort_order: count ?? 0,
-  });
-  if (error) {
-    await removeUploadedObject(supabase, uploaded.result.path);
-    return { error: mapSupabaseError(error) };
+    const { error } = await supabase.from("landing_product_images").insert({
+      landing_page_id: landingPageId,
+      product_id: productId,
+      image_url: uploaded.result.url,
+      sort_order: count ?? 0,
+    });
+    if (error) {
+      await removeUploadedObject(supabase, uploaded.result.path);
+      return { error: mapSupabaseError(error) };
+    }
+
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, images: await fetchProductGallery(supabase, landingPageId, productId) };
+  } catch (err) {
+    logUnexpectedSaveError("addProductGalleryImageAction", err);
+    if (uploadedPath) await removeUploadedObject(supabase, uploadedPath);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, images: await fetchProductGallery(supabase, landingPageId, productId) };
 }
 
 const GALLERY_META_MAX = { altText: 200, caption: 300 } as const;
@@ -303,24 +350,29 @@ export async function saveProductGalleryImagesAction(
     if (image.caption.length > GALLERY_META_MAX.caption) return { error: "캡션이 너무 깁니다." };
   }
 
-  for (const image of images) {
-    const { error } = await supabase
-      .from("landing_product_images")
-      .update({
-        alt_text: image.altText || null,
-        caption: image.caption || null,
-        is_active: image.isActive,
-        sort_order: image.sortOrder,
-      })
-      .eq("id", image.id)
-      .eq("product_id", productId)
-      .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
-  }
+  try {
+    for (const image of images) {
+      const { error } = await supabase
+        .from("landing_product_images")
+        .update({
+          alt_text: image.altText || null,
+          caption: image.caption || null,
+          is_active: image.isActive,
+          sort_order: image.sortOrder,
+        })
+        .eq("id", image.id)
+        .eq("product_id", productId)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
 
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, images: await fetchProductGallery(supabase, landingPageId, productId) };
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, images: await fetchProductGallery(supabase, landingPageId, productId) };
+  } catch (err) {
+    logUnexpectedSaveError("saveProductGalleryImagesAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
+  }
 }
 
 export async function deleteProductGalleryImageAction(
@@ -331,27 +383,32 @@ export async function deleteProductGalleryImageAction(
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const { data: existing } = await supabase
-    .from("landing_product_images")
-    .select("image_url")
-    .eq("id", imageId)
-    .eq("product_id", productId)
-    .eq("landing_page_id", landingPageId)
-    .maybeSingle();
-  if (!existing) return { error: "이미지를 찾을 수 없습니다." };
+  try {
+    const { data: existing } = await supabase
+      .from("landing_product_images")
+      .select("image_url")
+      .eq("id", imageId)
+      .eq("product_id", productId)
+      .eq("landing_page_id", landingPageId)
+      .maybeSingle();
+    if (!existing) return { error: "이미지를 찾을 수 없습니다." };
 
-  const { error } = await supabase
-    .from("landing_product_images")
-    .delete()
-    .eq("id", imageId)
-    .eq("product_id", productId)
-    .eq("landing_page_id", landingPageId);
-  if (error) return { error: mapSupabaseError(error) };
+    const { error } = await supabase
+      .from("landing_product_images")
+      .delete()
+      .eq("id", imageId)
+      .eq("product_id", productId)
+      .eq("landing_page_id", landingPageId);
+    if (error) return { error: mapSupabaseError(error) };
 
-  await removeAssetIfUnreferenced(supabase, existing.image_url);
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, images: await fetchProductGallery(supabase, landingPageId, productId) };
+    await removeAssetIfUnreferenced(supabase, existing.image_url);
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, images: await fetchProductGallery(supabase, landingPageId, productId) };
+  } catch (err) {
+    logUnexpectedSaveError("deleteProductGalleryImageAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -366,58 +423,71 @@ export async function uploadCaseImageAction(
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const { data: caseRow } = await supabase
-    .from("landing_cases")
-    .select("id, image_url")
-    .eq("id", caseId)
-    .eq("landing_page_id", landingPageId)
-    .maybeSingle();
-  if (!caseRow) return { error: "사례를 찾을 수 없습니다." };
+  let uploadedPath: string | undefined;
+  try {
+    const { data: caseRow } = await supabase
+      .from("landing_cases")
+      .select("id, image_url")
+      .eq("id", caseId)
+      .eq("landing_page_id", landingPageId)
+      .maybeSingle();
+    if (!caseRow) return { error: "사례를 찾을 수 없습니다." };
 
-  const uploaded = await uploadImageObject(supabase, "case", getFile(formData), (ext) =>
-    buildCaseImagePath(landingPageId, caseId, ext)
-  );
-  if (!uploaded.ok) return { error: uploaded.error };
+    const uploaded = await uploadImageObject(supabase, "case", getFile(formData), (ext) =>
+      buildCaseImagePath(landingPageId, caseId, ext)
+    );
+    if (!uploaded.ok) return { error: uploaded.error };
+    uploadedPath = uploaded.result.path;
 
-  const { error } = await supabase
-    .from("landing_cases")
-    .update({ image_url: uploaded.result.url })
-    .eq("id", caseId)
-    .eq("landing_page_id", landingPageId);
-  if (error) {
-    await removeUploadedObject(supabase, uploaded.result.path);
-    return { error: mapSupabaseError(error) };
+    const { error } = await supabase
+      .from("landing_cases")
+      .update({ image_url: uploaded.result.url })
+      .eq("id", caseId)
+      .eq("landing_page_id", landingPageId);
+    if (error) {
+      await removeUploadedObject(supabase, uploaded.result.path);
+      return { error: mapSupabaseError(error) };
+    }
+
+    await removeAssetIfUnreferenced(supabase, caseRow.image_url);
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, url: uploaded.result.url };
+  } catch (err) {
+    logUnexpectedSaveError("uploadCaseImageAction", err);
+    if (uploadedPath) await removeUploadedObject(supabase, uploadedPath);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  await removeAssetIfUnreferenced(supabase, caseRow.image_url);
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, url: uploaded.result.url };
 }
 
 export async function removeCaseImageAction(landingPageId: string, caseId: string): Promise<SingleImageResult> {
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const { data: caseRow } = await supabase
-    .from("landing_cases")
-    .select("id, image_url")
-    .eq("id", caseId)
-    .eq("landing_page_id", landingPageId)
-    .maybeSingle();
-  if (!caseRow) return { error: "사례를 찾을 수 없습니다." };
+  try {
+    const { data: caseRow } = await supabase
+      .from("landing_cases")
+      .select("id, image_url")
+      .eq("id", caseId)
+      .eq("landing_page_id", landingPageId)
+      .maybeSingle();
+    if (!caseRow) return { error: "사례를 찾을 수 없습니다." };
 
-  const { error } = await supabase
-    .from("landing_cases")
-    .update({ image_url: null })
-    .eq("id", caseId)
-    .eq("landing_page_id", landingPageId);
-  if (error) return { error: mapSupabaseError(error) };
+    const { error } = await supabase
+      .from("landing_cases")
+      .update({ image_url: null })
+      .eq("id", caseId)
+      .eq("landing_page_id", landingPageId);
+    if (error) return { error: mapSupabaseError(error) };
 
-  await removeAssetIfUnreferenced(supabase, caseRow.image_url);
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, url: null };
+    await removeAssetIfUnreferenced(supabase, caseRow.image_url);
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, url: null };
+  } catch (err) {
+    logUnexpectedSaveError("removeCaseImageAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -442,29 +512,37 @@ export async function addPageGalleryImageAction(landingPageId: string, formData:
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const uploaded = await uploadImageObject(supabase, "gallery", getFile(formData), (ext) =>
-    buildGalleryImagePath(landingPageId, ext)
-  );
-  if (!uploaded.ok) return { error: uploaded.error };
+  let uploadedPath: string | undefined;
+  try {
+    const uploaded = await uploadImageObject(supabase, "gallery", getFile(formData), (ext) =>
+      buildGalleryImagePath(landingPageId, ext)
+    );
+    if (!uploaded.ok) return { error: uploaded.error };
+    uploadedPath = uploaded.result.path;
 
-  const { count } = await supabase
-    .from("landing_gallery_images")
-    .select("*", { count: "exact", head: true })
-    .eq("landing_page_id", landingPageId);
+    const { count } = await supabase
+      .from("landing_gallery_images")
+      .select("*", { count: "exact", head: true })
+      .eq("landing_page_id", landingPageId);
 
-  const { error } = await supabase.from("landing_gallery_images").insert({
-    landing_page_id: landingPageId,
-    image_url: uploaded.result.url,
-    sort_order: count ?? 0,
-  });
-  if (error) {
-    await removeUploadedObject(supabase, uploaded.result.path);
-    return { error: mapSupabaseError(error) };
+    const { error } = await supabase.from("landing_gallery_images").insert({
+      landing_page_id: landingPageId,
+      image_url: uploaded.result.url,
+      sort_order: count ?? 0,
+    });
+    if (error) {
+      await removeUploadedObject(supabase, uploaded.result.path);
+      return { error: mapSupabaseError(error) };
+    }
+
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, images: await fetchPageGallery(supabase, landingPageId) };
+  } catch (err) {
+    logUnexpectedSaveError("addPageGalleryImageAction", err);
+    if (uploadedPath) await removeUploadedObject(supabase, uploadedPath);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, images: await fetchPageGallery(supabase, landingPageId) };
 }
 
 export async function savePageGalleryImagesAction(
@@ -479,23 +557,28 @@ export async function savePageGalleryImagesAction(
     if (image.caption.length > GALLERY_META_MAX.caption) return { error: "캡션이 너무 깁니다." };
   }
 
-  for (const image of images) {
-    const { error } = await supabase
-      .from("landing_gallery_images")
-      .update({
-        alt_text: image.altText || null,
-        caption: image.caption || null,
-        is_active: image.isActive,
-        sort_order: image.sortOrder,
-      })
-      .eq("id", image.id)
-      .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
-  }
+  try {
+    for (const image of images) {
+      const { error } = await supabase
+        .from("landing_gallery_images")
+        .update({
+          alt_text: image.altText || null,
+          caption: image.caption || null,
+          is_active: image.isActive,
+          sort_order: image.sortOrder,
+        })
+        .eq("id", image.id)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
 
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, images: await fetchPageGallery(supabase, landingPageId) };
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, images: await fetchPageGallery(supabase, landingPageId) };
+  } catch (err) {
+    logUnexpectedSaveError("savePageGalleryImagesAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
+  }
 }
 
 export async function deletePageGalleryImageAction(
@@ -505,25 +588,30 @@ export async function deletePageGalleryImageAction(
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const { data: existing } = await supabase
-    .from("landing_gallery_images")
-    .select("image_url")
-    .eq("id", imageId)
-    .eq("landing_page_id", landingPageId)
-    .maybeSingle();
-  if (!existing) return { error: "이미지를 찾을 수 없습니다." };
+  try {
+    const { data: existing } = await supabase
+      .from("landing_gallery_images")
+      .select("image_url")
+      .eq("id", imageId)
+      .eq("landing_page_id", landingPageId)
+      .maybeSingle();
+    if (!existing) return { error: "이미지를 찾을 수 없습니다." };
 
-  const { error } = await supabase
-    .from("landing_gallery_images")
-    .delete()
-    .eq("id", imageId)
-    .eq("landing_page_id", landingPageId);
-  if (error) return { error: mapSupabaseError(error) };
+    const { error } = await supabase
+      .from("landing_gallery_images")
+      .delete()
+      .eq("id", imageId)
+      .eq("landing_page_id", landingPageId);
+    if (error) return { error: mapSupabaseError(error) };
 
-  await removeAssetIfUnreferenced(supabase, existing.image_url);
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, images: await fetchPageGallery(supabase, landingPageId) };
+    await removeAssetIfUnreferenced(supabase, existing.image_url);
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, images: await fetchPageGallery(supabase, landingPageId) };
+  } catch (err) {
+    logUnexpectedSaveError("deletePageGalleryImageAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -534,46 +622,59 @@ export async function uploadOgImageAction(landingPageId: string, formData: FormD
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const uploaded = await uploadImageObject(supabase, "og", getFile(formData), (ext) => buildOgPath(landingPageId, ext));
-  if (!uploaded.ok) return { error: uploaded.error };
+  let uploadedPath: string | undefined;
+  try {
+    const uploaded = await uploadImageObject(supabase, "og", getFile(formData), (ext) => buildOgPath(landingPageId, ext));
+    if (!uploaded.ok) return { error: uploaded.error };
+    uploadedPath = uploaded.result.path;
 
-  const { data: existing } = await supabase
-    .from("landing_page_seo_settings")
-    .select("og_image_url")
-    .eq("landing_page_id", landingPageId)
-    .maybeSingle();
+    const { data: existing } = await supabase
+      .from("landing_page_seo_settings")
+      .select("og_image_url")
+      .eq("landing_page_id", landingPageId)
+      .maybeSingle();
 
-  const { error } = await supabase
-    .from("landing_page_seo_settings")
-    .upsert({ landing_page_id: landingPageId, og_image_url: uploaded.result.url }, { onConflict: "landing_page_id" });
-  if (error) {
-    await removeUploadedObject(supabase, uploaded.result.path);
-    return { error: mapSupabaseError(error) };
+    const { error } = await supabase
+      .from("landing_page_seo_settings")
+      .upsert({ landing_page_id: landingPageId, og_image_url: uploaded.result.url }, { onConflict: "landing_page_id" });
+    if (error) {
+      await removeUploadedObject(supabase, uploaded.result.path);
+      return { error: mapSupabaseError(error) };
+    }
+
+    await removeAssetIfUnreferenced(supabase, existing?.og_image_url ?? null);
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, url: uploaded.result.url };
+  } catch (err) {
+    logUnexpectedSaveError("uploadOgImageAction", err);
+    if (uploadedPath) await removeUploadedObject(supabase, uploadedPath);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  await removeAssetIfUnreferenced(supabase, existing?.og_image_url ?? null);
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, url: uploaded.result.url };
 }
 
 export async function removeOgImageAction(landingPageId: string): Promise<SingleImageResult> {
   await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const { data: existing } = await supabase
-    .from("landing_page_seo_settings")
-    .select("og_image_url")
-    .eq("landing_page_id", landingPageId)
-    .maybeSingle();
+  try {
+    const { data: existing } = await supabase
+      .from("landing_page_seo_settings")
+      .select("og_image_url")
+      .eq("landing_page_id", landingPageId)
+      .maybeSingle();
 
-  const { error } = await supabase
-    .from("landing_page_seo_settings")
-    .upsert({ landing_page_id: landingPageId, og_image_url: null }, { onConflict: "landing_page_id" });
-  if (error) return { error: mapSupabaseError(error) };
+    const { error } = await supabase
+      .from("landing_page_seo_settings")
+      .upsert({ landing_page_id: landingPageId, og_image_url: null }, { onConflict: "landing_page_id" });
+    if (error) return { error: mapSupabaseError(error) };
 
-  await removeAssetIfUnreferenced(supabase, existing?.og_image_url ?? null);
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, url: null };
+    await removeAssetIfUnreferenced(supabase, existing?.og_image_url ?? null);
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, url: null };
+  } catch (err) {
+    logUnexpectedSaveError("removeOgImageAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
+  }
 }

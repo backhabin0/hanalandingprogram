@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { mapSupabaseError } from "@/lib/supabase-errors";
+import { mapSupabaseError, SAFE_SAVE_ERROR_MESSAGE, logUnexpectedSaveError } from "@/lib/supabase-errors";
 import { diffChildRows } from "@/lib/child-sync";
 import { getString, toNullable, parseIndexedGroups } from "@/lib/form-data";
 import { isSafeHttpUrl } from "@/lib/validation";
@@ -153,49 +153,54 @@ export async function saveLandingProductsAction(
 
   const supabase = await createSupabaseServerClient();
 
-  const { data: existingRows, error: existingError } = await supabase
-    .from("landing_products")
-    .select("id")
-    .eq("landing_page_id", landingPageId);
-  if (existingError) return { error: mapSupabaseError(existingError) };
-
-  const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
-
-  if (toDeleteIds.length > 0) {
-    const { error } = await supabase
+  try {
+    const { data: existingRows, error: existingError } = await supabase
       .from("landing_products")
-      .delete()
-      .in("id", toDeleteIds)
+      .select("id")
       .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
-  }
+    if (existingError) return { error: mapSupabaseError(existingError) };
 
-  for (const { id, ...fields } of toUpdate) {
-    const { error } = await supabase
+    const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
+
+    if (toDeleteIds.length > 0) {
+      const { error } = await supabase
+        .from("landing_products")
+        .delete()
+        .in("id", toDeleteIds)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    for (const { id, ...fields } of toUpdate) {
+      const { error } = await supabase
+        .from("landing_products")
+        .update(fields)
+        .eq("id", id)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    if (toInsert.length > 0) {
+      const { error } = await supabase
+        .from("landing_products")
+        .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    const { data: fresh, error: freshError } = await supabase
       .from("landing_products")
-      .update(fields)
-      .eq("id", id)
-      .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
+      .select("*")
+      .eq("landing_page_id", landingPageId)
+      .order("sort_order", CHILD_ORDER)
+      .order("created_at", CHILD_ORDER);
+    if (freshError) return { error: mapSupabaseError(freshError) };
+
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    return { error: null, products: (fresh ?? []).map(mapProductRow) };
+  } catch (err) {
+    logUnexpectedSaveError("saveLandingProductsAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  if (toInsert.length > 0) {
-    const { error } = await supabase
-      .from("landing_products")
-      .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
-    if (error) return { error: mapSupabaseError(error) };
-  }
-
-  const { data: fresh, error: freshError } = await supabase
-    .from("landing_products")
-    .select("*")
-    .eq("landing_page_id", landingPageId)
-    .order("sort_order", CHILD_ORDER)
-    .order("created_at", CHILD_ORDER);
-  if (freshError) return { error: mapSupabaseError(freshError) };
-
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  return { error: null, products: (fresh ?? []).map(mapProductRow) };
 }
 
 // ---------------------------------------------------------------------------
@@ -255,49 +260,54 @@ export async function saveLandingFeaturesAction(
 
   const supabase = await createSupabaseServerClient();
 
-  const { data: existingRows, error: existingError } = await supabase
-    .from("landing_features")
-    .select("id")
-    .eq("landing_page_id", landingPageId);
-  if (existingError) return { error: mapSupabaseError(existingError) };
-
-  const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
-
-  if (toDeleteIds.length > 0) {
-    const { error } = await supabase
+  try {
+    const { data: existingRows, error: existingError } = await supabase
       .from("landing_features")
-      .delete()
-      .in("id", toDeleteIds)
+      .select("id")
       .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
-  }
+    if (existingError) return { error: mapSupabaseError(existingError) };
 
-  for (const { id, ...fields } of toUpdate) {
-    const { error } = await supabase
+    const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
+
+    if (toDeleteIds.length > 0) {
+      const { error } = await supabase
+        .from("landing_features")
+        .delete()
+        .in("id", toDeleteIds)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    for (const { id, ...fields } of toUpdate) {
+      const { error } = await supabase
+        .from("landing_features")
+        .update(fields)
+        .eq("id", id)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    if (toInsert.length > 0) {
+      const { error } = await supabase
+        .from("landing_features")
+        .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    const { data: fresh, error: freshError } = await supabase
       .from("landing_features")
-      .update(fields)
-      .eq("id", id)
-      .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
+      .select("*")
+      .eq("landing_page_id", landingPageId)
+      .order("sort_order", CHILD_ORDER)
+      .order("created_at", CHILD_ORDER);
+    if (freshError) return { error: mapSupabaseError(freshError) };
+
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    return { error: null, features: (fresh ?? []).map(mapFeatureRow) };
+  } catch (err) {
+    logUnexpectedSaveError("saveLandingFeaturesAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  if (toInsert.length > 0) {
-    const { error } = await supabase
-      .from("landing_features")
-      .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
-    if (error) return { error: mapSupabaseError(error) };
-  }
-
-  const { data: fresh, error: freshError } = await supabase
-    .from("landing_features")
-    .select("*")
-    .eq("landing_page_id", landingPageId)
-    .order("sort_order", CHILD_ORDER)
-    .order("created_at", CHILD_ORDER);
-  if (freshError) return { error: mapSupabaseError(freshError) };
-
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  return { error: null, features: (fresh ?? []).map(mapFeatureRow) };
 }
 
 // ---------------------------------------------------------------------------
@@ -363,49 +373,54 @@ export async function saveLandingMetricsAction(
 
   const supabase = await createSupabaseServerClient();
 
-  const { data: existingRows, error: existingError } = await supabase
-    .from("landing_metrics")
-    .select("id")
-    .eq("landing_page_id", landingPageId);
-  if (existingError) return { error: mapSupabaseError(existingError) };
-
-  const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
-
-  if (toDeleteIds.length > 0) {
-    const { error } = await supabase
+  try {
+    const { data: existingRows, error: existingError } = await supabase
       .from("landing_metrics")
-      .delete()
-      .in("id", toDeleteIds)
+      .select("id")
       .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
-  }
+    if (existingError) return { error: mapSupabaseError(existingError) };
 
-  for (const { id, ...fields } of toUpdate) {
-    const { error } = await supabase
+    const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
+
+    if (toDeleteIds.length > 0) {
+      const { error } = await supabase
+        .from("landing_metrics")
+        .delete()
+        .in("id", toDeleteIds)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    for (const { id, ...fields } of toUpdate) {
+      const { error } = await supabase
+        .from("landing_metrics")
+        .update(fields)
+        .eq("id", id)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    if (toInsert.length > 0) {
+      const { error } = await supabase
+        .from("landing_metrics")
+        .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    const { data: fresh, error: freshError } = await supabase
       .from("landing_metrics")
-      .update(fields)
-      .eq("id", id)
-      .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
+      .select("*")
+      .eq("landing_page_id", landingPageId)
+      .order("sort_order", CHILD_ORDER)
+      .order("created_at", CHILD_ORDER);
+    if (freshError) return { error: mapSupabaseError(freshError) };
+
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    return { error: null, metrics: (fresh ?? []).map(mapMetricRow) };
+  } catch (err) {
+    logUnexpectedSaveError("saveLandingMetricsAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  if (toInsert.length > 0) {
-    const { error } = await supabase
-      .from("landing_metrics")
-      .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
-    if (error) return { error: mapSupabaseError(error) };
-  }
-
-  const { data: fresh, error: freshError } = await supabase
-    .from("landing_metrics")
-    .select("*")
-    .eq("landing_page_id", landingPageId)
-    .order("sort_order", CHILD_ORDER)
-    .order("created_at", CHILD_ORDER);
-  if (freshError) return { error: mapSupabaseError(freshError) };
-
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  return { error: null, metrics: (fresh ?? []).map(mapMetricRow) };
 }
 
 // ---------------------------------------------------------------------------
@@ -473,66 +488,71 @@ export async function saveLandingSpecificationsAction(
 
   const supabase = await createSupabaseServerClient();
 
-  // A spec's product_id must belong to THIS landing page — never trust the
-  // client's own claim about which page a submitted product id came from.
-  const requestedProductIds = [...new Set(rows.map((r) => r.product_id).filter((v): v is string => Boolean(v)))];
-  if (requestedProductIds.length > 0) {
-    const { data: ownedProducts, error: productError } = await supabase
-      .from("landing_products")
-      .select("id")
-      .eq("landing_page_id", landingPageId)
-      .in("id", requestedProductIds);
-    if (productError) return { error: mapSupabaseError(productError) };
+  try {
+    // A spec's product_id must belong to THIS landing page — never trust the
+    // client's own claim about which page a submitted product id came from.
+    const requestedProductIds = [...new Set(rows.map((r) => r.product_id).filter((v): v is string => Boolean(v)))];
+    if (requestedProductIds.length > 0) {
+      const { data: ownedProducts, error: productError } = await supabase
+        .from("landing_products")
+        .select("id")
+        .eq("landing_page_id", landingPageId)
+        .in("id", requestedProductIds);
+      if (productError) return { error: mapSupabaseError(productError) };
 
-    const ownedIds = new Set((ownedProducts ?? []).map((p) => p.id));
-    if (requestedProductIds.some((pid) => !ownedIds.has(pid))) {
-      return { error: "이 페이지에 속하지 않은 제품에는 사양을 연결할 수 없습니다." };
+      const ownedIds = new Set((ownedProducts ?? []).map((p) => p.id));
+      if (requestedProductIds.some((pid) => !ownedIds.has(pid))) {
+        return { error: "이 페이지에 속하지 않은 제품에는 사양을 연결할 수 없습니다." };
+      }
     }
-  }
 
-  const { data: existingRows, error: existingError } = await supabase
-    .from("landing_specifications")
-    .select("id")
-    .eq("landing_page_id", landingPageId);
-  if (existingError) return { error: mapSupabaseError(existingError) };
-
-  const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
-
-  if (toDeleteIds.length > 0) {
-    const { error } = await supabase
+    const { data: existingRows, error: existingError } = await supabase
       .from("landing_specifications")
-      .delete()
-      .in("id", toDeleteIds)
+      .select("id")
       .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
-  }
+    if (existingError) return { error: mapSupabaseError(existingError) };
 
-  for (const { id, ...fields } of toUpdate) {
-    const { error } = await supabase
+    const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
+
+    if (toDeleteIds.length > 0) {
+      const { error } = await supabase
+        .from("landing_specifications")
+        .delete()
+        .in("id", toDeleteIds)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    for (const { id, ...fields } of toUpdate) {
+      const { error } = await supabase
+        .from("landing_specifications")
+        .update(fields)
+        .eq("id", id)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    if (toInsert.length > 0) {
+      const { error } = await supabase
+        .from("landing_specifications")
+        .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    const { data: fresh, error: freshError } = await supabase
       .from("landing_specifications")
-      .update(fields)
-      .eq("id", id)
-      .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
+      .select("*")
+      .eq("landing_page_id", landingPageId)
+      .order("sort_order", CHILD_ORDER)
+      .order("created_at", CHILD_ORDER);
+    if (freshError) return { error: mapSupabaseError(freshError) };
+
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    return { error: null, specifications: (fresh ?? []).map(mapSpecificationRow) };
+  } catch (err) {
+    logUnexpectedSaveError("saveLandingSpecificationsAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  if (toInsert.length > 0) {
-    const { error } = await supabase
-      .from("landing_specifications")
-      .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
-    if (error) return { error: mapSupabaseError(error) };
-  }
-
-  const { data: fresh, error: freshError } = await supabase
-    .from("landing_specifications")
-    .select("*")
-    .eq("landing_page_id", landingPageId)
-    .order("sort_order", CHILD_ORDER)
-    .order("created_at", CHILD_ORDER);
-  if (freshError) return { error: mapSupabaseError(freshError) };
-
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  return { error: null, specifications: (fresh ?? []).map(mapSpecificationRow) };
 }
 
 // ---------------------------------------------------------------------------
@@ -594,49 +614,54 @@ export async function saveLandingProcessStepsAction(
 
   const supabase = await createSupabaseServerClient();
 
-  const { data: existingRows, error: existingError } = await supabase
-    .from("landing_process_steps")
-    .select("id")
-    .eq("landing_page_id", landingPageId);
-  if (existingError) return { error: mapSupabaseError(existingError) };
-
-  const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
-
-  if (toDeleteIds.length > 0) {
-    const { error } = await supabase
+  try {
+    const { data: existingRows, error: existingError } = await supabase
       .from("landing_process_steps")
-      .delete()
-      .in("id", toDeleteIds)
+      .select("id")
       .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
-  }
+    if (existingError) return { error: mapSupabaseError(existingError) };
 
-  for (const { id, ...fields } of toUpdate) {
-    const { error } = await supabase
+    const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
+
+    if (toDeleteIds.length > 0) {
+      const { error } = await supabase
+        .from("landing_process_steps")
+        .delete()
+        .in("id", toDeleteIds)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    for (const { id, ...fields } of toUpdate) {
+      const { error } = await supabase
+        .from("landing_process_steps")
+        .update(fields)
+        .eq("id", id)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    if (toInsert.length > 0) {
+      const { error } = await supabase
+        .from("landing_process_steps")
+        .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    const { data: fresh, error: freshError } = await supabase
       .from("landing_process_steps")
-      .update(fields)
-      .eq("id", id)
-      .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
+      .select("*")
+      .eq("landing_page_id", landingPageId)
+      .order("sort_order", CHILD_ORDER)
+      .order("created_at", CHILD_ORDER);
+    if (freshError) return { error: mapSupabaseError(freshError) };
+
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    return { error: null, processSteps: (fresh ?? []).map(mapProcessStepRow) };
+  } catch (err) {
+    logUnexpectedSaveError("saveLandingProcessStepsAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  if (toInsert.length > 0) {
-    const { error } = await supabase
-      .from("landing_process_steps")
-      .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
-    if (error) return { error: mapSupabaseError(error) };
-  }
-
-  const { data: fresh, error: freshError } = await supabase
-    .from("landing_process_steps")
-    .select("*")
-    .eq("landing_page_id", landingPageId)
-    .order("sort_order", CHILD_ORDER)
-    .order("created_at", CHILD_ORDER);
-  if (freshError) return { error: mapSupabaseError(freshError) };
-
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  return { error: null, processSteps: (fresh ?? []).map(mapProcessStepRow) };
 }
 
 // ---------------------------------------------------------------------------
@@ -697,49 +722,54 @@ export async function saveLandingFaqsAction(
 
   const supabase = await createSupabaseServerClient();
 
-  const { data: existingRows, error: existingError } = await supabase
-    .from("landing_faqs")
-    .select("id")
-    .eq("landing_page_id", landingPageId);
-  if (existingError) return { error: mapSupabaseError(existingError) };
-
-  const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
-
-  if (toDeleteIds.length > 0) {
-    const { error } = await supabase
+  try {
+    const { data: existingRows, error: existingError } = await supabase
       .from("landing_faqs")
-      .delete()
-      .in("id", toDeleteIds)
+      .select("id")
       .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
-  }
+    if (existingError) return { error: mapSupabaseError(existingError) };
 
-  for (const { id, ...fields } of toUpdate) {
-    const { error } = await supabase
+    const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
+
+    if (toDeleteIds.length > 0) {
+      const { error } = await supabase
+        .from("landing_faqs")
+        .delete()
+        .in("id", toDeleteIds)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    for (const { id, ...fields } of toUpdate) {
+      const { error } = await supabase
+        .from("landing_faqs")
+        .update(fields)
+        .eq("id", id)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    if (toInsert.length > 0) {
+      const { error } = await supabase
+        .from("landing_faqs")
+        .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    const { data: fresh, error: freshError } = await supabase
       .from("landing_faqs")
-      .update(fields)
-      .eq("id", id)
-      .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
+      .select("*")
+      .eq("landing_page_id", landingPageId)
+      .order("sort_order", CHILD_ORDER)
+      .order("created_at", CHILD_ORDER);
+    if (freshError) return { error: mapSupabaseError(freshError) };
+
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    return { error: null, faqs: (fresh ?? []).map(mapFaqRow) };
+  } catch (err) {
+    logUnexpectedSaveError("saveLandingFaqsAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  if (toInsert.length > 0) {
-    const { error } = await supabase
-      .from("landing_faqs")
-      .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
-    if (error) return { error: mapSupabaseError(error) };
-  }
-
-  const { data: fresh, error: freshError } = await supabase
-    .from("landing_faqs")
-    .select("*")
-    .eq("landing_page_id", landingPageId)
-    .order("sort_order", CHILD_ORDER)
-    .order("created_at", CHILD_ORDER);
-  if (freshError) return { error: mapSupabaseError(freshError) };
-
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  return { error: null, faqs: (fresh ?? []).map(mapFaqRow) };
 }
 
 // ---------------------------------------------------------------------------
@@ -791,32 +821,38 @@ export async function saveLandingCompanyInfoAction(
   if (footerDescription.length > COMPANY_MAX.footerDescription) return { error: "푸터 설명이 너무 깁니다." };
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("landing_company_info").upsert(
-    {
-      landing_page_id: landingPageId,
-      company_name: toNullable(companyName),
-      representative_name: toNullable(representative),
-      business_number: toNullable(businessNumber),
-      email: toNullable(email),
-      customer_center: toNullable(customerCenter),
-      business_hours: toNullable(businessHours),
-      address_detail: toNullable(address),
-      established_year: toNullable(establishedYear),
-      footer_description: toNullable(footerDescription),
-    },
-    { onConflict: "landing_page_id" }
-  );
-  if (error) return { error: mapSupabaseError(error) };
 
-  const { data: fresh, error: freshError } = await supabase
-    .from("landing_company_info")
-    .select("*")
-    .eq("landing_page_id", landingPageId)
-    .maybeSingle();
-  if (freshError) return { error: mapSupabaseError(freshError) };
+  try {
+    const { error } = await supabase.from("landing_company_info").upsert(
+      {
+        landing_page_id: landingPageId,
+        company_name: toNullable(companyName),
+        representative_name: toNullable(representative),
+        business_number: toNullable(businessNumber),
+        email: toNullable(email),
+        customer_center: toNullable(customerCenter),
+        business_hours: toNullable(businessHours),
+        address_detail: toNullable(address),
+        established_year: toNullable(establishedYear),
+        footer_description: toNullable(footerDescription),
+      },
+      { onConflict: "landing_page_id" }
+    );
+    if (error) return { error: mapSupabaseError(error) };
 
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  return { error: null, companyInfo: fresh ? mapCompanyInfoRow(fresh) : undefined };
+    const { data: fresh, error: freshError } = await supabase
+      .from("landing_company_info")
+      .select("*")
+      .eq("landing_page_id", landingPageId)
+      .maybeSingle();
+    if (freshError) return { error: mapSupabaseError(freshError) };
+
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    return { error: null, companyInfo: fresh ? mapCompanyInfoRow(fresh) : undefined };
+  } catch (err) {
+    logUnexpectedSaveError("saveLandingCompanyInfoAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -895,35 +931,41 @@ export async function saveLandingSeoSettingsAction(
   const secondaryKeywords = parseSecondaryKeywords(secondaryKeywordsRaw);
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("landing_page_seo_settings").upsert(
-    {
-      landing_page_id: landingPageId,
-      seo_title: toNullable(seoTitle),
-      seo_description: toNullable(seoDescription),
-      og_title: toNullable(ogTitle),
-      og_description: toNullable(ogDescription),
-      og_image_url: toNullable(ogImageUrl),
-      seo_noindex: seoNoindex,
-      business_category: toNullable(businessCategory),
-      service_area: toNullable(serviceArea),
-      primary_keyword: toNullable(primaryKeyword),
-      secondary_keywords: secondaryKeywords.length > 0 ? secondaryKeywords : null,
-      locality_description: toNullable(localityDescription),
-    },
-    { onConflict: "landing_page_id" }
-  );
-  if (error) return { error: mapSupabaseError(error) };
 
-  const { data: fresh, error: freshError } = await supabase
-    .from("landing_page_seo_settings")
-    .select("*")
-    .eq("landing_page_id", landingPageId)
-    .maybeSingle();
-  if (freshError) return { error: mapSupabaseError(freshError) };
+  try {
+    const { error } = await supabase.from("landing_page_seo_settings").upsert(
+      {
+        landing_page_id: landingPageId,
+        seo_title: toNullable(seoTitle),
+        seo_description: toNullable(seoDescription),
+        og_title: toNullable(ogTitle),
+        og_description: toNullable(ogDescription),
+        og_image_url: toNullable(ogImageUrl),
+        seo_noindex: seoNoindex,
+        business_category: toNullable(businessCategory),
+        service_area: toNullable(serviceArea),
+        primary_keyword: toNullable(primaryKeyword),
+        secondary_keywords: secondaryKeywords.length > 0 ? secondaryKeywords : null,
+        locality_description: toNullable(localityDescription),
+      },
+      { onConflict: "landing_page_id" }
+    );
+    if (error) return { error: mapSupabaseError(error) };
 
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, seo: fresh ? mapSeoSettingsRow(fresh) : undefined };
+    const { data: fresh, error: freshError } = await supabase
+      .from("landing_page_seo_settings")
+      .select("*")
+      .eq("landing_page_id", landingPageId)
+      .maybeSingle();
+    if (freshError) return { error: mapSupabaseError(freshError) };
+
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, seo: fresh ? mapSeoSettingsRow(fresh) : undefined };
+  } catch (err) {
+    logUnexpectedSaveError("saveLandingSeoSettingsAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1010,65 +1052,70 @@ export async function saveLandingCasesAction(
 
   const supabase = await createSupabaseServerClient();
 
-  // A case's product_id must belong to THIS landing page — same rule as
-  // landing_specifications.product_id (see saveLandingSpecificationsAction).
-  const requestedProductIds = [...new Set(rows.map((r) => r.product_id).filter((v): v is string => Boolean(v)))];
-  if (requestedProductIds.length > 0) {
-    const { data: ownedProducts, error: productError } = await supabase
-      .from("landing_products")
-      .select("id")
-      .eq("landing_page_id", landingPageId)
-      .in("id", requestedProductIds);
-    if (productError) return { error: mapSupabaseError(productError) };
+  try {
+    // A case's product_id must belong to THIS landing page — same rule as
+    // landing_specifications.product_id (see saveLandingSpecificationsAction).
+    const requestedProductIds = [...new Set(rows.map((r) => r.product_id).filter((v): v is string => Boolean(v)))];
+    if (requestedProductIds.length > 0) {
+      const { data: ownedProducts, error: productError } = await supabase
+        .from("landing_products")
+        .select("id")
+        .eq("landing_page_id", landingPageId)
+        .in("id", requestedProductIds);
+      if (productError) return { error: mapSupabaseError(productError) };
 
-    const ownedIds = new Set((ownedProducts ?? []).map((p) => p.id));
-    if (requestedProductIds.some((pid) => !ownedIds.has(pid))) {
-      return { error: "이 페이지에 속하지 않은 제품에는 사례를 연결할 수 없습니다." };
+      const ownedIds = new Set((ownedProducts ?? []).map((p) => p.id));
+      if (requestedProductIds.some((pid) => !ownedIds.has(pid))) {
+        return { error: "이 페이지에 속하지 않은 제품에는 사례를 연결할 수 없습니다." };
+      }
     }
-  }
 
-  const { data: existingRows, error: existingError } = await supabase
-    .from("landing_cases")
-    .select("id")
-    .eq("landing_page_id", landingPageId);
-  if (existingError) return { error: mapSupabaseError(existingError) };
-
-  const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
-
-  if (toDeleteIds.length > 0) {
-    const { error } = await supabase
+    const { data: existingRows, error: existingError } = await supabase
       .from("landing_cases")
-      .delete()
-      .in("id", toDeleteIds)
+      .select("id")
       .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
-  }
+    if (existingError) return { error: mapSupabaseError(existingError) };
 
-  for (const { id, ...fields } of toUpdate) {
-    const { error } = await supabase
+    const { toInsert, toUpdate, toDeleteIds } = diffChildRows(rows, (existingRows ?? []).map((r) => r.id));
+
+    if (toDeleteIds.length > 0) {
+      const { error } = await supabase
+        .from("landing_cases")
+        .delete()
+        .in("id", toDeleteIds)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    for (const { id, ...fields } of toUpdate) {
+      const { error } = await supabase
+        .from("landing_cases")
+        .update(fields)
+        .eq("id", id)
+        .eq("landing_page_id", landingPageId);
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    if (toInsert.length > 0) {
+      const { error } = await supabase
+        .from("landing_cases")
+        .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
+      if (error) return { error: mapSupabaseError(error) };
+    }
+
+    const { data: fresh, error: freshError } = await supabase
       .from("landing_cases")
-      .update(fields)
-      .eq("id", id)
-      .eq("landing_page_id", landingPageId);
-    if (error) return { error: mapSupabaseError(error) };
+      .select("*")
+      .eq("landing_page_id", landingPageId)
+      .order("sort_order", CHILD_ORDER)
+      .order("created_at", CHILD_ORDER);
+    if (freshError) return { error: mapSupabaseError(freshError) };
+
+    revalidatePath(`/admin/pages/${landingPageId}/edit`);
+    revalidatePath("/[slug]", "page");
+    return { error: null, cases: (fresh ?? []).map(mapCaseRow) };
+  } catch (err) {
+    logUnexpectedSaveError("saveLandingCasesAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-
-  if (toInsert.length > 0) {
-    const { error } = await supabase
-      .from("landing_cases")
-      .insert(toInsert.map((row) => ({ ...row, landing_page_id: landingPageId })));
-    if (error) return { error: mapSupabaseError(error) };
-  }
-
-  const { data: fresh, error: freshError } = await supabase
-    .from("landing_cases")
-    .select("*")
-    .eq("landing_page_id", landingPageId)
-    .order("sort_order", CHILD_ORDER)
-    .order("created_at", CHILD_ORDER);
-  if (freshError) return { error: mapSupabaseError(freshError) };
-
-  revalidatePath(`/admin/pages/${landingPageId}/edit`);
-  revalidatePath("/[slug]", "page");
-  return { error: null, cases: (fresh ?? []).map(mapCaseRow) };
 }

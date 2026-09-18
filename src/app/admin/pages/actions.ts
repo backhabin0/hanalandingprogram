@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { validateSlug } from "@/lib/slug";
 import { isSafeHttpUrl } from "@/lib/validation";
-import { mapSupabaseError } from "@/lib/supabase-errors";
+import { mapSupabaseError, SAFE_SAVE_ERROR_MESSAGE, logUnexpectedSaveError } from "@/lib/supabase-errors";
 import { getString, toNullable, parseIndexedGroups } from "@/lib/form-data";
 import { removeAssetIfUnreferenced } from "@/lib/storage/asset-refs";
 import type { Database } from "@/lib/supabase/database.types";
@@ -178,38 +178,49 @@ export async function createLandingPageAction(
 
   const supabase = await createSupabaseServerClient();
 
-  const { data: page, error: insertError } = await supabase
-    .from("landing_pages")
-    .insert(parsed.data)
-    .select("id")
-    .single();
+  // redirect() below stays OUTSIDE this try/catch on purpose — it works by
+  // throwing, and a catch-all around it would misreport a successful create
+  // as a failed save. See SAFE_SAVE_ERROR_MESSAGE's doc comment for why the
+  // mutation itself still needs to be caught.
+  let pageId: string;
+  try {
+    const { data: page, error: insertError } = await supabase
+      .from("landing_pages")
+      .insert(parsed.data)
+      .select("id")
+      .single();
 
-  if (insertError || !page) {
-    return { error: mapSupabaseError(insertError!) };
-  }
-
-  if (products.length > 0 || features.length > 0) {
-    const [productsResult, featuresResult] = await Promise.all([
-      products.length > 0
-        ? supabase.from("landing_products").insert(products.map((p) => ({ ...p, landing_page_id: page.id })))
-        : Promise.resolve({ error: null }),
-      features.length > 0
-        ? supabase.from("landing_features").insert(features.map((f) => ({ ...f, landing_page_id: page.id })))
-        : Promise.resolve({ error: null }),
-    ]);
-
-    // supabase-js has no cross-table transaction here — if a child insert
-    // fails after the parent succeeded, clean up the orphaned parent
-    // ourselves rather than leaving a half-created page behind.
-    if (productsResult.error || featuresResult.error) {
-      await supabase.from("landing_pages").delete().eq("id", page.id);
-      return { error: "저장 중 문제가 발생했습니다." };
+    if (insertError || !page) {
+      return { error: mapSupabaseError(insertError!) };
     }
+    pageId = page.id;
+
+    if (products.length > 0 || features.length > 0) {
+      const [productsResult, featuresResult] = await Promise.all([
+        products.length > 0
+          ? supabase.from("landing_products").insert(products.map((p) => ({ ...p, landing_page_id: pageId })))
+          : Promise.resolve({ error: null }),
+        features.length > 0
+          ? supabase.from("landing_features").insert(features.map((f) => ({ ...f, landing_page_id: pageId })))
+          : Promise.resolve({ error: null }),
+      ]);
+
+      // supabase-js has no cross-table transaction here — if a child insert
+      // fails after the parent succeeded, clean up the orphaned parent
+      // ourselves rather than leaving a half-created page behind.
+      if (productsResult.error || featuresResult.error) {
+        await supabase.from("landing_pages").delete().eq("id", pageId);
+        return { error: SAFE_SAVE_ERROR_MESSAGE };
+      }
+    }
+  } catch (err) {
+    logUnexpectedSaveError("createLandingPageAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
 
   revalidatePath("/admin");
   revalidatePath("/admin/pages");
-  redirect(`/admin/pages/${page.id}/edit`);
+  redirect(`/admin/pages/${pageId}/edit`);
 }
 
 /**
@@ -235,22 +246,17 @@ export async function updateLandingPageAction(
 
   const supabase = await createSupabaseServerClient();
 
-  // supabase-js only returns `{ error }` for a query Postgres/PostgREST
-  // itself rejected — a transport-level failure (timeout, connection reset)
-  // throws instead. Uncaught, that crashes the whole Server Action, which
-  // Next.js turns into an opaque 500/503 response; the client is then left
-  // with no `state.error` to show, which is how "저장되었습니다" was seen
-  // rendering even though the update never reached the database. Catching
-  // it here guarantees this action always resolves to a normal
+  // See SAFE_SAVE_ERROR_MESSAGE's doc comment: a transport-level failure
+  // throws instead of returning `{ error }`, so the mutation must be
+  // try/caught to guarantee this action always resolves to a normal
   // `{ error }`/`{ error: null }` result instead of crashing uncaught.
-  let updateError;
   try {
-    ({ error: updateError } = await supabase.from("landing_pages").update(parsed.data).eq("id", id));
+    const { error: updateError } = await supabase.from("landing_pages").update(parsed.data).eq("id", id);
+    if (updateError) return { error: mapSupabaseError(updateError) };
   } catch (err) {
-    console.error("[updateLandingPageAction] unexpected error:", err instanceof Error ? err.message : "unknown");
-    return { error: "저장 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요." };
+    logUnexpectedSaveError("updateLandingPageAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
   }
-  if (updateError) return { error: mapSupabaseError(updateError) };
 
   revalidatePath("/admin");
   revalidatePath("/admin/pages");
@@ -295,25 +301,30 @@ export async function deleteLandingPageAction(id: string): Promise<void> {
 
   const supabase = await createSupabaseServerClient();
 
-  // Deliberately NOT a wholesale `storage.remove` of the whole
-  // `landing-pages/{id}/` folder — a future page-duplication feature could
-  // mean another page's row references one of these same URLs, and this
-  // codebase already got burned once (Stage 8) by an unverified assumption
-  // about Storage/RLS behavior. Each URL is checked for other references
-  // (`removeAssetIfUnreferenced`) after the page (and everything that used
-  // to reference it) is gone.
-  const imageUrls = await collectPageImageUrls(supabase, id);
+  try {
+    // Deliberately NOT a wholesale `storage.remove` of the whole
+    // `landing-pages/{id}/` folder — a future page-duplication feature could
+    // mean another page's row references one of these same URLs, and this
+    // codebase already got burned once (Stage 8) by an unverified assumption
+    // about Storage/RLS behavior. Each URL is checked for other references
+    // (`removeAssetIfUnreferenced`) after the page (and everything that used
+    // to reference it) is gone.
+    const imageUrls = await collectPageImageUrls(supabase, id);
 
-  const { error } = await supabase.from("landing_pages").delete().eq("id", id);
+    const { error } = await supabase.from("landing_pages").delete().eq("id", id);
 
-  if (error) {
-    // No toast/error channel wired to this fire-and-forget button yet — log
-    // server-side and leave the row in place rather than pretend it worked.
-    console.error("[deleteLandingPageAction] failed:", error.code, error.message);
+    if (error) {
+      // No toast/error channel wired to this fire-and-forget button yet — log
+      // server-side and leave the row in place rather than pretend it worked.
+      console.error("[deleteLandingPageAction] failed:", error.code, error.message);
+      return;
+    }
+
+    await Promise.all(imageUrls.map((url) => removeAssetIfUnreferenced(supabase, url)));
+  } catch (err) {
+    logUnexpectedSaveError("deleteLandingPageAction", err);
     return;
   }
-
-  await Promise.all(imageUrls.map((url) => removeAssetIfUnreferenced(supabase, url)));
 
   revalidatePath("/admin");
   revalidatePath("/admin/pages");
@@ -328,10 +339,15 @@ export async function toggleLandingPageStatusAction(
   const nextStatus: LandingPageStatus = currentStatus === "public" ? "private" : "public";
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("landing_pages").update({ status: nextStatus }).eq("id", id);
 
-  if (error) {
-    console.error("[toggleLandingPageStatusAction] failed:", error.code, error.message);
+  try {
+    const { error } = await supabase.from("landing_pages").update({ status: nextStatus }).eq("id", id);
+    if (error) {
+      console.error("[toggleLandingPageStatusAction] failed:", error.code, error.message);
+      return;
+    }
+  } catch (err) {
+    logUnexpectedSaveError("toggleLandingPageStatusAction", err);
     return;
   }
 

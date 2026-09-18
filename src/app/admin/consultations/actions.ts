@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { mapSupabaseError } from "@/lib/supabase-errors";
+import { mapSupabaseError, SAFE_SAVE_ERROR_MESSAGE, logUnexpectedSaveError } from "@/lib/supabase-errors";
 import { CONSULTATION_STATUSES } from "@/lib/consultation-requests";
 import type { ConsultationStatus } from "@/types/landing";
 
@@ -18,12 +18,17 @@ export async function updateConsultationStatusAction(
   }
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("consultation_requests")
-    .update({ status: status as ConsultationStatus })
-    .eq("id", id);
 
-  if (error) return { error: mapSupabaseError(error) };
+  try {
+    const { error } = await supabase
+      .from("consultation_requests")
+      .update({ status: status as ConsultationStatus })
+      .eq("id", id);
+    if (error) return { error: mapSupabaseError(error) };
+  } catch (err) {
+    logUnexpectedSaveError("updateConsultationStatusAction", err);
+    return { error: SAFE_SAVE_ERROR_MESSAGE };
+  }
 
   revalidatePath("/admin/consultations");
   revalidatePath(`/admin/consultations/${id}`);
