@@ -11,6 +11,13 @@ import { getSiteUrl } from "@/lib/seo/site-url";
  * directive that Yandex itself stopped honoring in 2018, and Google has
  * never supported it. The one line that matters for search engine
  * discovery, `Sitemap:`, is included below.
+ *
+ * BunnyCode (`/bunnycode/*`) is served by a separate Vercel project via the
+ * `beforeFiles` rewrite in `next.config.ts` and publishes its own sitemap at
+ * `/bunnycode/sitemap.xml`. It is listed here as a second `Sitemap:` rather
+ * than merged into `src/app/sitemap.ts`, so this project never has to know
+ * (or keep in sync) BunnyCode's URL list. No `Disallow` entry covers
+ * `/bunnycode`.
  */
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = getSiteUrl();
@@ -21,6 +28,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/admin/", "/login", "/preview/", "/api/"],
     },
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: [`${baseUrl}/sitemap.xml`, `${baseUrl}/bunnycode/sitemap.xml`],
   };
 }
